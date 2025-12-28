@@ -20,6 +20,8 @@ import { Trash2, Copy, Search, Plus, FileUp, FileDown } from 'lucide-react';
 import { useBOMStore } from '@/stores/bom-store';
 import { BOMItem } from '@/types/bom';
 import { PartSearchDialog } from './part-search-dialog';
+import { ImportDialog } from './import-dialog';
+import { ExportDialog } from './export-dialog';
 import { toast } from 'sonner';
 
 const columnHelper = createColumnHelper<BOMItem>();
@@ -39,6 +41,8 @@ export function BomTable() {
   } = useBOMStore();
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   // Define Columns
   const columns = useMemo(() => [
@@ -223,7 +227,7 @@ export function BomTable() {
             <Plus className="w-4 h-4 mr-2" />
             Add Manual
           </Button>
-          <Button size="sm" variant="outline" onClick={() => console.log('Import')}>
+          <Button size="sm" variant="outline" onClick={() => setIsImportOpen(true)}>
             <FileUp className="w-4 h-4 mr-2" />
             Import CSV
           </Button>
@@ -236,7 +240,7 @@ export function BomTable() {
               Delete ({selectedItemIds.length})
             </Button>
           )}
-          <Button size="sm" variant="outline" onClick={() => console.log('Export')}>
+          <Button size="sm" variant="outline" onClick={() => setIsExportOpen(true)}>
             <FileDown className="w-4 h-4 mr-2" />
             Export
           </Button>
@@ -281,6 +285,16 @@ export function BomTable() {
         open={isSearchOpen}
         onOpenChange={setIsSearchOpen}
         onSelect={handlePartSelect}
+      />
+
+      <ImportDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+      />
+
+      <ExportDialog
+        open={isExportOpen}
+        onOpenChange={setIsExportOpen}
       />
     </div>
   );
