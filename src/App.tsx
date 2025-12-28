@@ -5,6 +5,7 @@ import { HomePage } from "@/pages/home";
 import { SettingsPage } from "@/pages/settings";
 import { PartsPage } from "@/pages/parts";
 import { BomPage } from "@/pages/bom";
+import { BomProjectPage } from "@/pages/bom-project";
 
 function App() {
   return (
@@ -14,7 +15,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/parts" element={<PartsPage />} />
-          <Route path="/bom/*" element={<BomPage />} />
+          <Route path="/bom" element={<BomPage />} />
+          <Route path="/bom/:projectId" element={<BomProjectPage />} />
         </Route>
       </Routes>
       <Toaster position="bottom-right" />
