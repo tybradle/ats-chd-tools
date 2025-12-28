@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowLeft } from 'lucide-react';
 import { useBOMStore } from '@/stores/bom-store';
 import { LocationTabs } from '@/components/bom/location-tabs';
+import { BomTable } from '@/components/bom/bom-table';
 
 export function BomProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -75,20 +76,8 @@ export function BomProjectPage() {
       {/* Location Tabs */}
       <LocationTabs />
 
-      {/* BOM Table Area - Placeholder for Phase 5 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>BOM Items</CardTitle>
-          <CardDescription>
-            Editable BOM table will be implemented in Phase 5
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-muted-foreground text-center py-8">
-            Select a location tab above to view and edit items
-          </div>
-        </CardContent>
-      </Card>
+      {/* BOM Table */}
+      <BomTable />
     </div>
   );
 }
