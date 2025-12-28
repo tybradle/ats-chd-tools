@@ -224,3 +224,263 @@ export const settings = {
   
   getAll: () => query<Setting>("SELECT * FROM settings ORDER BY key"),
 };
+
+// ============================================
+// BOM Translation Module Database Operations
+// ============================================
+
+import type { BOMProject, BOMLocation, BOMItem, BOMItemWithLocation, BOMProjectWithCounts, BOMLocationWithCount, BOMExport, ExportFormat } from '@/types/bom';
+
+// BOM Projects
+export const bomProjects = {
+  getAll: () =>
+    query<BOMProjectWithCounts>(`
+      SELECT 
+        p.*,
+        COUNT(DISTINCT l.id) as location_count,
+        COUNT(DISTINCT i.id) as item_count
+      FROM bom_projects p
+      LEFT JOIN bom_locations l ON p.id = l.project_id
+      LEFT JOIN bom_items i ON p.id = i.project_id
+      GROUP BY p.id
+      ORDER BY p.updated_at DESC
+    `),
+
+  getById: (id: number) =>
+    query<BOMProjectWithCounts>(`
+      SELECT 
+        p.*,
+        COUNT(DISTINCT l.id) as location_count,
+        COUNT(DISTINCT i.id) as item_count
+      FROM bom_projects p
+      LEFT JOIN bom_locations l ON p.id = l.project_id
+      LEFT JOIN bom_items i ON p.id = i.project_id
+      WHERE p.id = ?
+      GROUP BY p.id
+    `, [id]).then(rows => rows[0] ?? null),
+
+  create: (projectNumber: string, packageName: string, name?: string, description?: string, version = '1.0') =>
+    execute(
+      `INSERT INTO bom_projects (project_number, package_name, name, description, version)
+       VALUES (?, ?, ?, ?, ?)`,
+      [projectNumber, packageName, name ?? null, description ?? null, version]
+    ),
+
+  update: (id: number, updates: Partial<Omit<BOMProject, 'id' | 'created_at' | 'updated_at'>>) => {
+    const fields: string[] = [];
+    const values: unknown[] = [];
+
+    if (updates.project_number !== undefined) { fields.push('project_number = ?'); values.push(updates.project_number); }
+    if (updates.package_name !== undefined) { fields.push('package_name = ?'); values.push(updates.package_name); }
+    if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
+    if (updates.description !== undefined) { fields.push('description = ?'); values.push(updates.description); }
+    if (updates.version !== undefined) { fields.push('version = ?'); values.push(updates.version); }
+    if (updates.metadata !== undefined) { fields.push('metadata = ?'); values.push(updates.metadata); }
+
+    if (fields.length === 0) return Promise.resolve({ rowsAffected: 0, lastInsertId: 0 });
+
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+
+    return execute(`UPDATE bom_projects SET ${fields.join(', ')} WHERE id = ?`, values);
+  },
+
+  delete: (id: number) =>
+    execute('DELETE FROM bom_projects WHERE id = ?', [id]),
+};
+
+// BOM Locations
+export const bomLocations = {
+  getByProject: (projectId: number) =>
+    query<BOMLocationWithCount>(`
+      SELECT 
+        l.*,
+        COUNT(i.id) as item_count
+      FROM bom_locations l
+      LEFT JOIN bom_items i ON l.id = i.location_id
+      WHERE l.project_id = ?
+      GROUP BY l.id
+      ORDER BY l.sort_order, l.name
+    `, [projectId]),
+
+  getById: (id: number) =>
+    query<BOMLocation>('SELECT * FROM bom_locations WHERE id = ?', [id])
+      .then(rows => rows[0] ?? null),
+
+  create: (projectId: number, name: string, exportName?: string) =>
+    execute(
+      `INSERT INTO bom_locations (project_id, name, export_name)
+       VALUES (?, ?, ?)`,
+      [projectId, name, exportName ?? null]
+    ),
+
+  update: (id: number, name: string, exportName?: string | null) =>
+    execute(
+      `UPDATE bom_locations 
+       SET name = ?, export_name = ?, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = ?`,
+      [name, exportName ?? null, id]
+    ),
+
+  delete: (id: number) =>
+    execute('DELETE FROM bom_locations WHERE id = ?', [id]),
+};
+
+// BOM Items
+export const bomItems = {
+  getByProject: (projectId: number, locationId?: number) => {
+    if (locationId) {
+      return query<BOMItemWithLocation>(`
+        SELECT i.*, l.name as location_name
+        FROM bom_items i
+        LEFT JOIN bom_locations l ON i.location_id = l.id
+        WHERE i.project_id = ? AND i.location_id = ?
+        ORDER BY i.sort_order, i.id
+      `, [projectId, locationId]);
+    }
+    return query<BOMItemWithLocation>(`
+      SELECT i.*, l.name as location_name
+      FROM bom_items i
+      LEFT JOIN bom_locations l ON i.location_id = l.id
+      WHERE i.project_id = ?
+      ORDER BY i.location_id, i.sort_order, i.id
+    `, [projectId]);
+  },
+
+  getById: (id: number) =>
+    query<BOMItemWithLocation>(`
+      SELECT i.*, l.name as location_name
+      FROM bom_items i
+      LEFT JOIN bom_locations l ON i.location_id = l.id
+      WHERE i.id = ?
+    `, [id]).then(rows => rows[0] ?? null),
+
+  create: (item: Omit<BOMItem, 'id' | 'created_at' | 'updated_at'>) =>
+    execute(
+      `INSERT INTO bom_items (
+        project_id, location_id, part_id, part_number, description,
+        secondary_description, quantity, unit, unit_price, manufacturer,
+        supplier, category, reference_designator, is_spare, metadata, sort_order
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        item.project_id, item.location_id, item.part_id, item.part_number,
+        item.description, item.secondary_description, item.quantity, item.unit,
+        item.unit_price, item.manufacturer, item.supplier, item.category,
+        item.reference_designator, item.is_spare, item.metadata, item.sort_order
+      ]
+    ),
+
+  bulkCreate: async (items: Omit<BOMItem, 'id' | 'created_at' | 'updated_at'>[]) => {
+    // Get highest sort_order for the project
+    const projectId = items[0]?.project_id;
+    const lastItem = await query<{ max_order: number }>(
+      'SELECT MAX(sort_order) as max_order FROM bom_items WHERE project_id = ?',
+      [projectId]
+    );
+    let startOrder = (lastItem[0]?.max_order ?? 0) + 1;
+
+    // Insert all items
+    return transaction(async (db) => {
+      const results = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const result = await db.execute(
+          `INSERT INTO bom_items (
+            project_id, location_id, part_id, part_number, description,
+            secondary_description, quantity, unit, unit_price, manufacturer,
+            supplier, category, reference_designator, is_spare, metadata, sort_order
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            item.project_id, item.location_id, item.part_id, item.part_number,
+            item.description, item.secondary_description, item.quantity, item.unit,
+            item.unit_price, item.manufacturer, item.supplier, item.category,
+            item.reference_designator, item.is_spare, item.metadata, startOrder + i
+          ]
+        );
+        results.push(result);
+      }
+      return results;
+    });
+  },
+
+  update: (id: number, updates: Partial<Omit<BOMItem, 'id' | 'created_at' | 'updated_at'>>) => {
+    const fields: string[] = [];
+    const values: unknown[] = [];
+
+    if (updates.part_number !== undefined) { fields.push('part_number = ?'); values.push(updates.part_number); }
+    if (updates.description !== undefined) { fields.push('description = ?'); values.push(updates.description); }
+    if (updates.secondary_description !== undefined) { fields.push('secondary_description = ?'); values.push(updates.secondary_description); }
+    if (updates.quantity !== undefined) { fields.push('quantity = ?'); values.push(updates.quantity); }
+    if (updates.unit !== undefined) { fields.push('unit = ?'); values.push(updates.unit); }
+    if (updates.unit_price !== undefined) { fields.push('unit_price = ?'); values.push(updates.unit_price); }
+    if (updates.manufacturer !== undefined) { fields.push('manufacturer = ?'); values.push(updates.manufacturer); }
+    if (updates.supplier !== undefined) { fields.push('supplier = ?'); values.push(updates.supplier); }
+    if (updates.category !== undefined) { fields.push('category = ?'); values.push(updates.category); }
+    if (updates.reference_designator !== undefined) { fields.push('reference_designator = ?'); values.push(updates.reference_designator); }
+    if (updates.is_spare !== undefined) { fields.push('is_spare = ?'); values.push(updates.is_spare); }
+    if (updates.location_id !== undefined) { fields.push('location_id = ?'); values.push(updates.location_id); }
+    if (updates.sort_order !== undefined) { fields.push('sort_order = ?'); values.push(updates.sort_order); }
+    if (updates.metadata !== undefined) { fields.push('metadata = ?'); values.push(updates.metadata); }
+
+    if (fields.length === 0) return Promise.resolve({ rowsAffected: 0, lastInsertId: 0 });
+
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+
+    return execute(`UPDATE bom_items SET ${fields.join(', ')} WHERE id = ?`, values);
+  },
+
+  delete: (id: number) =>
+    execute('DELETE FROM bom_items WHERE id = ?', [id]),
+
+  bulkDelete: (ids: number[]) => {
+    const placeholders = ids.map(() => '?').join(',');
+    return execute(`DELETE FROM bom_items WHERE id IN (${placeholders})`, ids);
+  },
+
+  duplicate: async (id: number) => {
+    const item = await bomItems.getById(id);
+    if (!item) throw new Error('Item not found');
+
+    return bomItems.create({
+      project_id: item.project_id,
+      location_id: item.location_id,
+      part_id: item.part_id,
+      part_number: item.part_number,
+      description: item.description,
+      secondary_description: item.secondary_description,
+      quantity: item.quantity,
+      unit: item.unit,
+      unit_price: item.unit_price,
+      manufacturer: item.manufacturer,
+      supplier: item.supplier,
+      category: item.category,
+      reference_designator: item.reference_designator,
+      is_spare: item.is_spare,
+      metadata: item.metadata,
+      sort_order: item.sort_order + 1,
+    });
+  },
+};
+
+// BOM Exports (history tracking - metadata only, no content blob)
+export const bomExports = {
+  getByProject: (projectId: number) =>
+    query<BOMExport>(
+      'SELECT * FROM bom_exports WHERE project_id = ? ORDER BY exported_at DESC',
+      [projectId]
+    ),
+
+  create: (projectId: number, filename: string, format: ExportFormat, version: string, locationId?: number) =>
+    execute(
+      `INSERT INTO bom_exports (project_id, location_id, filename, format, version)
+       VALUES (?, ?, ?, ?, ?)`,
+      [projectId, locationId ?? null, filename, format, version]
+    ),
+
+  delete: (id: number) =>
+    execute('DELETE FROM bom_exports WHERE id = ?', [id]),
+
+  deleteByProject: (projectId: number) =>
+    execute('DELETE FROM bom_exports WHERE project_id = ?', [projectId]),
+};
