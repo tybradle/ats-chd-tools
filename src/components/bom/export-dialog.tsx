@@ -14,7 +14,6 @@ import { save } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import { generateEplanXML, generateCSV, generateJSON, generateZW1Header } from '@/lib/export-utils';
 import { useBOMStore } from '@/stores/bom-store';
-import type { ExportFormat } from '@/types/bom';
 import { toast } from 'sonner';
 import { FileDown, FileText, FileCode, FileJson } from 'lucide-react';
 

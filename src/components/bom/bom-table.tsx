@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Copy, Search, Plus, FileUp, FileDown } from 'lucide-react';
 import { useBOMStore } from '@/stores/bom-store';
-import { BOMItem } from '@/types/bom';
+import type { BOMItem } from '@/types/bom';
 import { PartSearchDialog } from './part-search-dialog';
 import { ImportDialog } from './import-dialog';
 import { ExportDialog } from './export-dialog';
@@ -181,6 +181,7 @@ export function BomTable() {
       reference_designator: '',
       is_spare: 0,
       sort_order: items.length + 1,
+      metadata: null,
     });
     toast.success('Part added to BOM');
   };
@@ -203,6 +204,7 @@ export function BomTable() {
       reference_designator: '',
       is_spare: 0,
       sort_order: items.length + 1,
+      metadata: null,
     });
   };
 

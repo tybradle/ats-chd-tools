@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import type {
   BOMProject,
   BOMProjectWithCounts,
-  BOMLocation,
   BOMLocationWithCount,
   BOMItem,
   BOMItemWithLocation,
@@ -104,7 +103,7 @@ export const useBOMStore = create<BOMStore>((set, get) => ({
       const result = await bomProjects.create(projectNumber, packageName, name, description);
       await get().loadProjects();
       set({ loading: false });
-      return result.lastInsertId;
+      return result.lastInsertId ?? 0;
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to create project',

@@ -40,7 +40,7 @@ export async function query<T>(sql: string, bindValues: unknown[] = []): Promise
 export async function execute(
   sql: string,
   bindValues: unknown[] = []
-): Promise<{ rowsAffected: number; lastInsertId: number }> {
+): Promise<{ rowsAffected: number; lastInsertId: number | undefined }> {
   const database = await getDb();
   const result = await database.execute(sql, bindValues);
   return {
