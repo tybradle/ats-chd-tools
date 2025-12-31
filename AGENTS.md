@@ -1,126 +1,84 @@
 # ATS CHD Tools - AI Agent Guidelines
 
 ## Project Overview
-
-Unified desktop application platform for ATS CHD department. Replaces multiple Excel-based workflows with a single Tauri desktop app.
-
-**Target**: Windows desktop, 100% offline, single-user, ~15-20MB installer
+Unified desktop application platform for the ATS CHD department. Replaces multiple Excel-based workflows with a single Tauri desktop app.
+**Target**: Windows desktop, 100% offline, single-user, ~15-20MB installer.
 
 ## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Desktop | Tauri 2.0 |
-| Frontend | React 19, TypeScript, Vite 6 |
-| Styling | TailwindCSS 4, shadcn/ui |
-| State | Zustand |
-| Routing | React Router 7 |
-| Forms | React Hook Form + Zod |
-| Tables | TanStack Table |
-| Database | SQLite via @tauri-apps/plugin-sql |
-| Icons | Lucide React |
-| Toasts | Sonner |
-
-## Directory Structure
-
-```
-src/
-├── components/
-│   ├── ui/          # shadcn/ui components (DO NOT MODIFY)
-│   └── layout/      # App shell, navigation
-├── pages/           # Route components
-├── lib/
-│   ├── db/          # Database client and queries
-│   └── utils.ts     # Utility functions (cn, etc.)
-├── stores/          # Zustand stores
-└── types/           # TypeScript types/interfaces
-
-src-tauri/
-├── src/             # Rust backend (minimal - mostly plugins)
-├── migrations/      # SQLite migrations
-└── capabilities/    # Tauri permissions
-```
-
-## Modules (Priority Order)
-
-1. **BOM Translation** - Convert BOMs between formats (CSV, Excel, XML, ZW1)
-2. **Parts Library** - Shared master parts database
-3. QR Label Generator (future)
-4. Quoting Workbook (future)
-5. Heat/Load Calculator (future)
-
-## Code Conventions
-
-### TypeScript
-- Strict mode enabled
-- Use `@/` path alias for imports
-- Prefer `interface` over `type` for object shapes
-- Use Zod for runtime validation
-
-### React
-- Functional components only
-- Use `'use client'` is NOT needed (not Next.js)
-- Prefer composition over inheritance
-- Keep components small and focused
-
-### Styling
-- Use Tailwind utility classes
-- Use shadcn/ui components as base
-- Follow shadcn/ui patterns for new components
-- Use `cn()` from `@/lib/utils` for conditional classes
-
-### Database
-- All queries go through `src/lib/db/client.ts`
-- Use parameterized queries (never string interpolation)
-- Migrations in `src-tauri/migrations/` with numbered prefixes
-
-### State Management
-- Zustand for global state
-- React state for local/component state
-- No Redux, no Context for global state
-
-### Forms
-- React Hook Form for all forms
-- Zod schemas for validation
-- Controlled components preferred
+- **Desktop**: Tauri 2.0 (Rust backend, minimal logic)
+- **Frontend**: React 19, TypeScript, Vite 6
+- **Styling**: TailwindCSS 4, shadcn/ui
+- **State**: Zustand (global), React State (local)
+- **Routing**: React Router 7
+- **Forms**: React Hook Form + Zod
+- **Database**: SQLite via `@tauri-apps/plugin-sql`
 
 ## Commands
-
 ```bash
 npm run dev           # Vite dev server only
 npm run tauri:dev     # Full Tauri dev (frontend + backend)
 npm run tauri:build   # Production build
-npm run lint          # ESLint
+npm run lint          # ESLint check
+npm run lint -- --fix # Fix lint errors
+tsc -b                # Type check
 ```
+*(Testing to be configured - currently no test suite)*
 
-## Database Schema
+## Directory Structure
+- `src/components/ui/`: shadcn/ui components (**DO NOT MODIFY** existing ones, add new ones via CLI)
+- `src/components/layout/`: App shell, navigation, global layouts
+- `src/pages/`: Route-level components
+- `src/lib/db/client.ts`: **CENTRALIZED** database access layer. All queries go here.
+- `src/stores/`: Zustand global state stores
+- `src/types/`: Centralized TypeScript interfaces and types
+- `src-tauri/migrations/`: SQLite schema migrations (numbered prefixes)
 
-Core tables shared across modules:
-- `manufacturers` - Company/brand info
-- `categories` - Hierarchical part categories
-- `parts` - Master parts list
-- `parts_fts` - Full-text search index
-- `settings` - App configuration key-value store
+## Code Style & Conventions
 
-Module-specific:
-- `part_pricing` - For quoting module
-- `part_electrical` - For heat/load module
+### 1. Imports & Path Aliases
+- Use `@/` alias for all internal imports (e.g., `@/components/ui/button`)
+- Order: React/Third-party -> Internal components -> Stores/Hooks -> Types -> Utils/Styles
+- Use **type-only imports** for types and interfaces: `import type { ... } from '...'`
 
-## Anti-Patterns (Avoid)
+### 2. TypeScript
+- **Strict Mode**: Mandatory. No `any`. Use `unknown` if necessary.
+- **Interfaces vs Types**: Prefer `interface` for object shapes, `type` for unions/aliases.
+- **Zod**: Use for all runtime validation, especially database results and form data.
 
-- Do NOT add new UI libraries (use shadcn/ui)
-- Do NOT write Rust commands unless absolutely necessary
-- Do NOT use `any` type
-- Do NOT create files without clear purpose
-- Do NOT add features not in scope
+### 3. React Components
+- **Functional only**: No class components.
+- **Small & Focused**: Extract logic into hooks or smaller sub-components.
+- **Fast Refresh**: Files should only export components. Constants/helpers go in `lib/` or at the bottom of the file (private).
+- **No 'use client'**: Not using Next.js. Standard React 19 patterns.
 
-## Testing
+### 4. Database (SQLite)
+- **Single Source of Truth**: All queries MUST be in `src/lib/db/client.ts`.
+- **Parameterized**: Use `?` placeholders. **NEVER** use string interpolation/template literals for queries.
+- **Migrations**: New tables/changes must go in `src-tauri/migrations/NNN_description.sql`.
 
-(To be configured)
+### 5. State Management
+- **Zustand**: For global, cross-page, or complex module state (e.g., BOM builder).
+- **URL Params**: Use for shareable state/navigation (React Router).
+- **Local State**: Use `useState`/`useReducer` for ephemeral UI state (modals, form inputs).
 
-## Notes
+### 6. Styling (Tailwind 4)
+- Use utility classes exclusively. Avoid CSS files.
+- Use `cn()` from `@/lib/utils` for conditional classes.
+- Follow shadcn/ui design tokens and color variables.
 
-- This is a solo developer project
-- Optimize for maintainability over cleverness
-- Prefer explicit over implicit
-- When in doubt, keep it simple
+### 7. Error Handling
+- Use `try/catch` for all database and async operations.
+- Display user-friendly errors via `sonner` toasts or inline alerts.
+- Log technical errors to the console for debugging in dev.
+
+## Anti-Patterns
+- **No Direct SQL**: Components should not call `db.execute` directly; use `src/lib/db/client.ts`.
+- **No New UI Libs**: Stick to shadcn/ui.
+- **No Implicit Any**: Ensure all function parameters and returns are typed.
+- **No Manual DOM**: Use React refs only when absolutely necessary.
+
+## Development Workflow
+1. Check `src/lib/db/client.ts` for existing data access logic.
+2. Define types in `src/types/` before implementation.
+3. Use `Zustand` for complex workflows (like Glenair or BOM translation).
+4. Run `npm run lint` and `tsc -b` before considering a task complete.

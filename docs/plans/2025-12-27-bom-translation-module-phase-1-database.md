@@ -1,236 +1,289 @@
-import Database from "@tauri-apps/plugin-sql";
+# BOM Translation Module Implementation Plan
 
-// Database connection singleton
-let db: Database | null = null;
+# BOM Translation Module - Phase 1: Database Schema & Types
 
-const DB_NAME = "sqlite:ats-chd-tools.db";
+**Navigation:** **[Phase 1]** | [Phase 2](./2025-12-27-bom-translation-module-phase-2-store.md) | [Phase 3](./2025-12-27-bom-translation-module-phase-3-projects-ui.md) | [Phase 4](./2025-12-27-bom-translation-module-phase-4-detail-locations.md) | [Phase 5](./2025-12-27-bom-translation-module-phase-5-bom-table.md) | [Phase 6](./2025-12-27-bom-translation-module-phase-6-import-export.md) | [Index](./2025-12-27-bom-translation-module-INDEX.md)
 
-/**
- * Get or create database connection
- */
-export async function getDb(): Promise<Database> {
-  if (!db) {
-    db = await Database.load(DB_NAME);
-  }
-  return db;
-}
+**Prerequisites:**
+- [ ] None (foundation phase)
 
-/**
- * Close database connection
- */
-export async function closeDb(): Promise<void> {
-  if (db) {
-    await db.close();
-    db = null;
-  }
-}
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-/**
- * Execute a query that returns rows
- */
-export async function query<T>(sql: string, bindValues: unknown[] = []): Promise<T[]> {
-  const database = await getDb();
-  return database.select<T[]>(sql, bindValues);
-}
+**Goal:** Create database schema, TypeScript types, and client operations for BOM translation module.
 
-/**
- * Execute a query that modifies data (INSERT, UPDATE, DELETE)
- * Returns the number of affected rows and last insert id
- */
-export async function execute(
-  sql: string,
-  bindValues: unknown[] = []
-): Promise<{ rowsAffected: number; lastInsertId: number | undefined }> {
-  const database = await getDb();
-  const result = await database.execute(sql, bindValues);
-  return {
-    rowsAffected: result.rowsAffected,
-    lastInsertId: result.lastInsertId,
-  };
-}
+**Architecture:** SQLite database with BOM projects/locations/items tables matching BOM_JS schema structure.
 
-/**
- * Run multiple queries in a transaction
- */
-export async function transaction<T>(fn: (db: Database) => Promise<T>): Promise<T> {
-  const database = await getDb();
-  await database.execute("BEGIN TRANSACTION");
-  try {
-    const result = await fn(database);
-    await database.execute("COMMIT");
-    return result;
-  } catch (error) {
-    await database.execute("ROLLBACK");
-    throw error;
-  }
-}
+**Tech Stack:** SQLite migrations, TypeScript interfaces, Tauri SQL plugin.
 
-// Type-safe query helpers for common operations
+---
 
-export interface Manufacturer {
+## Phase 1: Database Schema & Types (30-40 min)
+
+### Task 1.1: Create BOM Database Migration
+
+**Files:**
+- Create: `src-tauri/migrations/002_bom_tables.sql`
+
+**Step 1: Create migration file**
+
+Create `src-tauri/migrations/002_bom_tables.sql`:
+
+```sql
+-- ============================================
+-- BOM Translation Tables
+-- Version: 2
+-- Based on: BOM_JS Prisma schema (Electron version)
+-- Adapted for: Tauri single-user desktop app
+-- ============================================
+
+-- BOM Projects
+CREATE TABLE IF NOT EXISTS bom_projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_number TEXT NOT NULL UNIQUE,
+    package_name TEXT NOT NULL,
+    name TEXT,
+    description TEXT,
+    version TEXT DEFAULT '1.0',
+    metadata TEXT,  -- JSON blob for extensibility
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Locations within projects (kitting locations)
+CREATE TABLE IF NOT EXISTS bom_locations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES bom_projects(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    export_name TEXT,  -- Override name for exports
+    sort_order INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(project_id, name)
+);
+
+-- BOM Items (line items within locations)
+CREATE TABLE IF NOT EXISTS bom_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES bom_projects(id) ON DELETE CASCADE,
+    location_id INTEGER NOT NULL REFERENCES bom_locations(id) ON DELETE CASCADE,
+    part_id INTEGER REFERENCES parts(id) ON DELETE SET NULL,
+    
+    -- Core fields
+    part_number TEXT NOT NULL,
+    description TEXT NOT NULL,
+    secondary_description TEXT,
+    quantity REAL NOT NULL DEFAULT 1,
+    unit TEXT DEFAULT 'EA',
+    
+    -- Additional fields
+    unit_price REAL,
+    manufacturer TEXT,
+    supplier TEXT,
+    category TEXT,
+    reference_designator TEXT,
+    is_spare INTEGER DEFAULT 0,
+    metadata TEXT,  -- JSON blob for extensibility
+    
+    -- Metadata
+    sort_order INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Export History (metadata only - no content blob)
+CREATE TABLE IF NOT EXISTS bom_exports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES bom_projects(id) ON DELETE CASCADE,
+    location_id INTEGER REFERENCES bom_locations(id) ON DELETE CASCADE,
+    filename TEXT NOT NULL,
+    format TEXT NOT NULL CHECK(format IN ('EPLAN', 'XML', 'JSON', 'CSV', 'EXCEL')),
+    version TEXT NOT NULL,
+    exported_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_bom_items_project ON bom_items(project_id);
+CREATE INDEX IF NOT EXISTS idx_bom_items_location ON bom_items(location_id);
+CREATE INDEX IF NOT EXISTS idx_bom_items_part ON bom_items(part_id);
+CREATE INDEX IF NOT EXISTS idx_bom_locations_project ON bom_locations(project_id);
+CREATE INDEX IF NOT EXISTS idx_bom_items_order ON bom_items(project_id, location_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_bom_projects_number ON bom_projects(project_number);
+CREATE INDEX IF NOT EXISTS idx_bom_exports_project ON bom_exports(project_id);
+CREATE INDEX IF NOT EXISTS idx_bom_exports_format ON bom_exports(format);
+```
+
+**Step 2: Verify migration syntax**
+
+Run: `npm run tauri:dev`
+
+Expected: Migrations run without errors, tables created successfully
+
+**Step 3: Commit**
+
+```bash
+git add src-tauri/migrations/002_bom_tables.sql
+git commit -m "feat(db): add BOM tables migration"
+```
+
+---
+
+### Task 1.2: Create TypeScript Type Definitions
+
+**Files:**
+- Create: `src/types/bom.ts`
+
+**Step 1: Create BOM types file**
+
+Create `src/types/bom.ts`:
+
+```typescript
+// ============================================
+// BOM Translation Module Types
+// ============================================
+
+// Export formats supported
+export type ExportFormat = 'EPLAN' | 'XML' | 'JSON' | 'CSV' | 'EXCEL';
+
+// BOM Projects
+export interface BOMProject {
   id: number;
-  name: string;
-  code: string | null;
+  project_number: string;
+  package_name: string;
+  name: string | null;
+  description: string | null;
+  version: string;
+  metadata: string | null;  // JSON string
   created_at: string;
+  updated_at: string;
 }
 
-export interface Category {
+export interface BOMProjectWithCounts extends BOMProject {
+  location_count: number;
+  item_count: number;
+}
+
+// Locations
+export interface BOMLocation {
   id: number;
+  project_id: number;
   name: string;
-  parent_id: number | null;
+  export_name: string | null;
+  sort_order: number;
   created_at: string;
+  updated_at: string;
 }
 
-export interface Part {
+export interface BOMLocationWithCount extends BOMLocation {
+  item_count: number;
+}
+
+// BOM Items
+export interface BOMItem {
   id: number;
+  project_id: number;
+  location_id: number;
+  part_id: number | null;
   part_number: string;
-  manufacturer_id: number;
   description: string;
   secondary_description: string | null;
-  category_id: number | null;
+  quantity: number;
   unit: string;
+  unit_price: number | null;
+  manufacturer: string | null;
+  supplier: string | null;
+  category: string | null;
+  reference_designator: string | null;
+  is_spare: number; // SQLite boolean (0/1)
+  metadata: string | null;  // JSON string
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
 
-export interface PartWithManufacturer extends Part {
-  manufacturer_name: string;
-  manufacturer_code: string | null;
+export interface BOMItemWithLocation extends BOMItem {
+  location_name: string | null;
 }
 
-export interface Setting {
-  key: string;
-  value: string | null;
-  updated_at: string;
+// Export History (metadata only)
+export interface BOMExport {
+  id: number;
+  project_id: number;
+  location_id: number | null;
+  filename: string;
+  format: ExportFormat;
+  version: string;
+  exported_at: string;
 }
 
-// Manufacturers
-export const manufacturers = {
-  getAll: () => query<Manufacturer>("SELECT * FROM manufacturers ORDER BY name"),
-  
-  getById: (id: number) => 
-    query<Manufacturer>("SELECT * FROM manufacturers WHERE id = ?", [id])
-      .then(rows => rows[0] ?? null),
-  
-  create: (name: string, code?: string) =>
-    execute("INSERT INTO manufacturers (name, code) VALUES (?, ?)", [name, code ?? null]),
-  
-  update: (id: number, name: string, code?: string) =>
-    execute("UPDATE manufacturers SET name = ?, code = ? WHERE id = ?", [name, code ?? null, id]),
-  
-  delete: (id: number) =>
-    execute("DELETE FROM manufacturers WHERE id = ?", [id]),
-};
+// CSV Import Types
+export interface CSVRow {
+  [key: string]: string;
+}
 
-// Categories
-export const categories = {
-  getAll: () => query<Category>("SELECT * FROM categories ORDER BY name"),
-  
-  getById: (id: number) =>
-    query<Category>("SELECT * FROM categories WHERE id = ?", [id])
-      .then(rows => rows[0] ?? null),
-  
-  getByParent: (parentId: number | null) =>
-    query<Category>(
-      parentId === null 
-        ? "SELECT * FROM categories WHERE parent_id IS NULL ORDER BY name"
-        : "SELECT * FROM categories WHERE parent_id = ? ORDER BY name",
-      parentId === null ? [] : [parentId]
-    ),
-  
-  create: (name: string, parentId?: number) =>
-    execute("INSERT INTO categories (name, parent_id) VALUES (?, ?)", [name, parentId ?? null]),
-  
-  update: (id: number, name: string, parentId?: number) =>
-    execute("UPDATE categories SET name = ?, parent_id = ? WHERE id = ?", [name, parentId ?? null, id]),
-  
-  delete: (id: number) =>
-    execute("DELETE FROM categories WHERE id = ?", [id]),
-};
+export interface ImportPreview {
+  items: Partial<BOMItem>[];
+  errors: Array<{ row: number; message: string }>;
+  totalRows: number;
+  validRows: number;
+}
 
-// Parts
-export const parts = {
-  getAll: () => query<PartWithManufacturer>(`
-    SELECT p.*, m.name as manufacturer_name, m.code as manufacturer_code
-    FROM parts p
-    JOIN manufacturers m ON p.manufacturer_id = m.id
-    ORDER BY p.part_number
-  `),
-  
-  getById: (id: number) =>
-    query<PartWithManufacturer>(`
-      SELECT p.*, m.name as manufacturer_name, m.code as manufacturer_code
-      FROM parts p
-      JOIN manufacturers m ON p.manufacturer_id = m.id
-      WHERE p.id = ?
-    `, [id]).then(rows => rows[0] ?? null),
-  
-  search: (term: string, limit = 50) =>
-    query<PartWithManufacturer>(`
-      SELECT p.*, m.name as manufacturer_name, m.code as manufacturer_code
-      FROM parts p
-      JOIN manufacturers m ON p.manufacturer_id = m.id
-      WHERE p.id IN (
-        SELECT rowid FROM parts_fts WHERE parts_fts MATCH ?
-      )
-      LIMIT ?
-    `, [`${term}*`, limit]),
-  
-  create: (part: Omit<Part, "id" | "created_at" | "updated_at">) =>
-    execute(
-      `INSERT INTO parts (part_number, manufacturer_id, description, secondary_description, category_id, unit)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [part.part_number, part.manufacturer_id, part.description, part.secondary_description, part.category_id, part.unit]
-    ),
-  
-  update: (id: number, part: Partial<Omit<Part, "id" | "created_at" | "updated_at">>) => {
-    const fields: string[] = [];
-    const values: unknown[] = [];
-    
-    if (part.part_number !== undefined) { fields.push("part_number = ?"); values.push(part.part_number); }
-    if (part.manufacturer_id !== undefined) { fields.push("manufacturer_id = ?"); values.push(part.manufacturer_id); }
-    if (part.description !== undefined) { fields.push("description = ?"); values.push(part.description); }
-    if (part.secondary_description !== undefined) { fields.push("secondary_description = ?"); values.push(part.secondary_description); }
-    if (part.category_id !== undefined) { fields.push("category_id = ?"); values.push(part.category_id); }
-    if (part.unit !== undefined) { fields.push("unit = ?"); values.push(part.unit); }
-    
-    if (fields.length === 0) return Promise.resolve({ rowsAffected: 0, lastInsertId: 0 });
-    
-    fields.push("updated_at = CURRENT_TIMESTAMP");
-    values.push(id);
-    
-    return execute(`UPDATE parts SET ${fields.join(", ")} WHERE id = ?`, values);
-  },
-  
-  delete: (id: number) =>
-    execute("DELETE FROM parts WHERE id = ?", [id]),
-};
+export interface ColumnMapping {
+  partNumber?: number;
+  description?: number;
+  secondaryDescription?: number;
+  manufacturer?: number;
+  quantity?: number;
+  unit?: number;
+  unitPrice?: number;
+  category?: number;
+  supplier?: number;
+  referenceDesignator?: number;
+}
 
-// Settings
-export const settings = {
-  get: (key: string) =>
-    query<Setting>("SELECT * FROM settings WHERE key = ?", [key])
-      .then(rows => rows[0]?.value ?? null),
-  
-  set: (key: string, value: string) =>
-    execute(
-      `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
-       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP`,
-      [key, value]
-    ),
-  
-  delete: (key: string) =>
-    execute("DELETE FROM settings WHERE key = ?", [key]),
-  
-  getAll: () => query<Setting>("SELECT * FROM settings ORDER BY key"),
-};
+// Export Result (for UI)
+export interface ExportResult {
+  filename: string;
+  format: ExportFormat;
+  zw1Filename?: string;  // For EPLAN exports
+}
+```
 
+**Step 2: Verify types compile**
+
+Run: `npx tsc --noEmit`
+
+Expected: No TypeScript errors
+
+**Step 3: Commit**
+
+```bash
+git add src/types/bom.ts
+git commit -m "feat(types): add BOM type definitions"
+```
+
+---
+
+### Task 1.3: Extend Database Client with BOM Operations
+
+**Files:**
+- Modify: `src/lib/db/client.ts` (add at end before final export)
+
+**Step 1: Add BOM types import**
+
+At top of `src/lib/db/client.ts`, add after existing imports:
+
+```typescript
+import type { BOMProject, BOMLocation, BOMItem, BOMItemWithLocation, BOMProjectWithCounts, BOMLocationWithCount, BOMExport, ExportFormat } from '@/types/bom';
+```
+
+**Step 2: Add BOM projects operations**
+
+At end of file (before final line), add:
+
+```typescript
 // ============================================
 // BOM Translation Module Database Operations
 // ============================================
-
-import type { GlenairContact, GlenairArrangement, GlenairPHM } from '@/types/glenair';
-import type { BOMProject, BOMLocation, BOMItem, BOMItemWithLocation, BOMProjectWithCounts, BOMLocationWithCount, BOMExport, ExportFormat } from '@/types/bom';
 
 // BOM Projects
 export const bomProjects = {
@@ -276,7 +329,6 @@ export const bomProjects = {
     if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
     if (updates.description !== undefined) { fields.push('description = ?'); values.push(updates.description); }
     if (updates.version !== undefined) { fields.push('version = ?'); values.push(updates.version); }
-    if (updates.metadata !== undefined) { fields.push('metadata = ?'); values.push(updates.metadata); }
 
     if (fields.length === 0) return Promise.resolve({ rowsAffected: 0, lastInsertId: 0 });
 
@@ -361,13 +413,13 @@ export const bomItems = {
       `INSERT INTO bom_items (
         project_id, location_id, part_id, part_number, description,
         secondary_description, quantity, unit, unit_price, manufacturer,
-        supplier, category, reference_designator, is_spare, metadata, sort_order
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        supplier, category, reference_designator, is_spare, sort_order
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.project_id, item.location_id, item.part_id, item.part_number,
         item.description, item.secondary_description, item.quantity, item.unit,
         item.unit_price, item.manufacturer, item.supplier, item.category,
-        item.reference_designator, item.is_spare, item.metadata, item.sort_order
+        item.reference_designator, item.is_spare, item.sort_order
       ]
     ),
 
@@ -378,7 +430,7 @@ export const bomItems = {
       'SELECT MAX(sort_order) as max_order FROM bom_items WHERE project_id = ?',
       [projectId]
     );
-    const startOrder = (lastItem[0]?.max_order ?? 0) + 1;
+    let startOrder = (lastItem[0]?.max_order ?? 0) + 1;
 
     // Insert all items
     return transaction(async (db) => {
@@ -389,13 +441,13 @@ export const bomItems = {
           `INSERT INTO bom_items (
             project_id, location_id, part_id, part_number, description,
             secondary_description, quantity, unit, unit_price, manufacturer,
-            supplier, category, reference_designator, is_spare, metadata, sort_order
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            supplier, category, reference_designator, is_spare, sort_order
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             item.project_id, item.location_id, item.part_id, item.part_number,
             item.description, item.secondary_description, item.quantity, item.unit,
             item.unit_price, item.manufacturer, item.supplier, item.category,
-            item.reference_designator, item.is_spare, item.metadata, startOrder + i
+            item.reference_designator, item.is_spare, startOrder + i
           ]
         );
         results.push(result);
@@ -421,7 +473,6 @@ export const bomItems = {
     if (updates.is_spare !== undefined) { fields.push('is_spare = ?'); values.push(updates.is_spare); }
     if (updates.location_id !== undefined) { fields.push('location_id = ?'); values.push(updates.location_id); }
     if (updates.sort_order !== undefined) { fields.push('sort_order = ?'); values.push(updates.sort_order); }
-    if (updates.metadata !== undefined) { fields.push('metadata = ?'); values.push(updates.metadata); }
 
     if (fields.length === 0) return Promise.resolve({ rowsAffected: 0, lastInsertId: 0 });
 
@@ -485,39 +536,35 @@ export const bomExports = {
   deleteByProject: (projectId: number) =>
     execute('DELETE FROM bom_exports WHERE project_id = ?', [projectId]),
 };
+```
 
-// ============================================
-// Glenair Module Database Operations
-// ============================================
+**Step 3: Verify compilation**
 
-export const glenair = {
-  // Contacts
-  getContactsBySize: (size: string) =>
-    query<GlenairContact>("SELECT * FROM glenair_contacts WHERE contact_size = ?", [size]),
-  
-  getContactsByPartNumber: (partNumber: string) =>
-    query<GlenairContact>("SELECT * FROM glenair_contacts WHERE part_number = ?", [partNumber])
-      .then(rows => rows[0] ?? null),
+Run: `npx tsc --noEmit`
 
-  // Arrangements
-  getArrangementsByContactCount: (count: number, size: string) =>
-    query<GlenairArrangement>(
-      "SELECT * FROM glenair_arrangements WHERE total_contacts >= ? AND contact_size = ? ORDER BY total_contacts ASC",
-      [count, size]
-    ),
+Expected: No TypeScript errors
 
-  getArrangementDetails: (arrangement: string) =>
-    query<GlenairArrangement>("SELECT * FROM glenair_arrangements WHERE arrangement = ?", [arrangement]),
+**Step 4: Test database operations**
 
-  // Wire Mappings
-  getCompatibleContactSizes: (wireSize: string, system: string) =>
-    query<{ contact_size: string }>(
-      "SELECT contact_size FROM glenair_wire_contacts WHERE wire_size = ? AND system = ?",
-      [wireSize, system]
-    ),
+Run: `npm run tauri:dev`
 
-  // PHM (Shell Size mapping)
-  getPHMByArrangement: (arrangement: string) =>
-    query<GlenairPHM>("SELECT * FROM glenair_phm WHERE arrangement = ?", [arrangement])
-      .then(rows => rows[0] ?? null),
-};
+Expected: App starts, no runtime errors in console
+
+**Step 5: Commit**
+
+```bash
+git add src/lib/db/client.ts
+git commit -m "feat(db): add BOM database operations"
+```
+
+---
+
+## Phase Complete Checklist
+
+Before moving to next phase, verify:
+- [ ] BOM database migration created and applied
+- [ ] TypeScript types defined for all BOM entities
+- [ ] Database client extended with full BOM CRUD operations
+- [ ] Tests pass and app starts without errors
+- [ ] All code committed and ready for Phase 2 (Store)
+

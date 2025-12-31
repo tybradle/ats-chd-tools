@@ -4,6 +4,7 @@ import {
   FileSpreadsheet, 
   Package, 
   Settings,
+  Cpu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,6 +14,7 @@ const navItems = [
   { to: "/", icon: Home, label: "Home" },
   { to: "/bom", icon: FileSpreadsheet, label: "BOM Translation" },
   { to: "/parts", icon: Package, label: "Parts Library" },
+  { to: "/glenair", icon: Cpu, label: "Glenair Builder" },
 ];
 
 export function RootLayout() {
