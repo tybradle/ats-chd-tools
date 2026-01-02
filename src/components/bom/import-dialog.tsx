@@ -8,14 +8,17 @@ import {
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { open } from '@tauri-apps/plugin-dialog';
-import { parseCSV, mapCSVToBOM, getCSVHeaders } from '@/lib/csv-parser';
+import { parseCSV, getCSVHeaders } from '@/lib/csv-parser';
 import { parseExcel, getExcelSheets, parseExcelSheet } from '@/lib/excel-parser';
+import { mapImportRowsToBOM } from '@/lib/import-utils';
 import { useBOMStore } from '@/stores/bom-store';
 import type { ColumnMapping, CSVRow } from '@/types/bom';
 import { toast } from 'sonner';
-import { FileUp, ArrowRight, ArrowLeft, Check } from 'lucide-react';
+import { FileUp, ArrowRight, ArrowLeft, Check, RefreshCw } from 'lucide-react';
 
 interface ImportDialogProps {
   open: boolean;
@@ -28,6 +31,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
   const [fileBuffer, setFileBuffer] = useState<Uint8Array | null>(null);
   const [availableSheets, setAvailableSheets] = useState<string[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<string>('');
+  const [headerRow, setHeaderRow] = useState<number>(1);
   const [csvData, setCsvData] = useState<CSVRow[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [mapping, setMapping] = useState<ColumnMapping>({});
@@ -40,10 +44,40 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
     setFileBuffer(null);
     setAvailableSheets([]);
     setSelectedSheet('');
+    setHeaderRow(1);
     setCsvData([]);
     setHeaders([]);
     setMapping({});
     setImporting(false);
+  };
+
+  const processParsedRows = (rows: CSVRow[]) => {
+    setCsvData(rows);
+    setHeaders(getCSVHeaders(rows));
+    
+    // Auto-map common column names
+    const autoMapping: ColumnMapping = {};
+    const headerLower = getCSVHeaders(rows).map(h => h.toLowerCase());
+    
+    const mappings: [keyof ColumnMapping, string[]][] = [
+      ['partNumber', ['part number', 'partnumber', 'part_number', 'part #', 'pn', 'item']],
+      ['description', ['description', 'desc', 'name', 'item description']],
+      ['secondaryDescription', ['secondary description', 'details', 'specs', 'technical']],
+      ['quantity', ['quantity', 'qty', 'count', 'amount']],
+      ['manufacturer', ['manufacturer', 'mfg', 'mfr', 'vendor']],
+      ['unit', ['unit', 'uom', 'units']],
+      ['unitPrice', ['price', 'unit price', 'cost', 'unit_price']],
+      ['referenceDesignator', ['ref des', 'refdes', 'reference', 'designator']],
+      ['supplier', ['supplier', 'vendor', 'distributor']],
+      ['category', ['category', 'cat', 'type']],
+    ];
+    
+    mappings.forEach(([key, patterns]) => {
+      const idx = headerLower.findIndex(h => patterns.some(p => h.includes(p)));
+      if (idx !== -1) autoMapping[key] = idx;
+    });
+    
+    setMapping(autoMapping);
   };
 
   const handleFilePick = async () => {
@@ -60,12 +94,12 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
         // Detect file type
         const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
         setFileType(isExcel ? 'excel' : 'csv');
+        setFileBuffer(contents);
         
         let rows: CSVRow[] = [];
         
         if (isExcel) {
           // Excel file - check for multiple sheets
-          setFileBuffer(contents);
           const sheets = getExcelSheets(contents);
           setAvailableSheets(sheets);
           
@@ -76,9 +110,10 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
           
           if (sheets.length === 1) {
             // Single sheet - parse directly
-            rows = parseExcel(contents, 0);
-            const sheetName = sheets[0];
-            console.log(`Parsing single Excel sheet: "${sheetName}"`);
+            // Store the sheet name so we can re-parse if needed
+            setSelectedSheet(sheets[0]);
+            rows = parseExcel(contents, 0, headerRow - 1);
+            console.log(`Parsing single Excel sheet: "${sheets[0]}"`);
           } else {
             // Multiple sheets - show selection step
             setStep('sheet-select');
@@ -95,29 +130,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
           return;
         }
         
-        setCsvData(rows);
-        setHeaders(getCSVHeaders(rows));
-        
-        // Auto-map common column names
-        const autoMapping: ColumnMapping = {};
-        const headerLower = getCSVHeaders(rows).map(h => h.toLowerCase());
-        
-        const mappings: [keyof ColumnMapping, string[]][] = [
-          ['partNumber', ['part number', 'partnumber', 'part_number', 'part #', 'pn', 'item']],
-          ['description', ['description', 'desc', 'name', 'item description']],
-          ['quantity', ['quantity', 'qty', 'count', 'amount']],
-          ['manufacturer', ['manufacturer', 'mfg', 'mfr', 'vendor']],
-          ['unit', ['unit', 'uom', 'units']],
-          ['unitPrice', ['price', 'unit price', 'cost', 'unit_price']],
-          ['referenceDesignator', ['ref des', 'refdes', 'reference', 'designator']],
-        ];
-        
-        mappings.forEach(([key, patterns]) => {
-          const idx = headerLower.findIndex(h => patterns.some(p => h.includes(p)));
-          if (idx !== -1) autoMapping[key] = idx;
-        });
-        
-        setMapping(autoMapping);
+        processParsedRows(rows);
         setStep('mapping');
       }
     } catch (error) {
@@ -133,7 +146,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
     }
     
     try {
-      const rows = parseExcelSheet(fileBuffer, selectedSheet);
+      const rows = parseExcelSheet(fileBuffer, selectedSheet, headerRow - 1);
       
       if (rows.length === 0) {
         toast.error(`Sheet "${selectedSheet}" is empty`);
@@ -141,33 +154,40 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
       }
       
       console.log(`Parsing Excel sheet: "${selectedSheet}"`);
-      setCsvData(rows);
-      setHeaders(getCSVHeaders(rows));
-      
-      // Auto-map common column names
-      const autoMapping: ColumnMapping = {};
-      const headerLower = getCSVHeaders(rows).map(h => h.toLowerCase());
-      
-      const mappings: [keyof ColumnMapping, string[]][] = [
-        ['partNumber', ['part number', 'partnumber', 'part_number', 'part #', 'pn', 'item']],
-        ['description', ['description', 'desc', 'name', 'item description']],
-        ['quantity', ['quantity', 'qty', 'count', 'amount']],
-        ['manufacturer', ['manufacturer', 'mfg', 'mfr', 'vendor']],
-        ['unit', ['unit', 'uom', 'units']],
-        ['unitPrice', ['price', 'unit price', 'cost', 'unit_price']],
-        ['referenceDesignator', ['ref des', 'refdes', 'reference', 'designator']],
-      ];
-      
-      mappings.forEach(([key, patterns]) => {
-        const idx = headerLower.findIndex(h => patterns.some(p => h.includes(p)));
-        if (idx !== -1) autoMapping[key] = idx;
-      });
-      
-      setMapping(autoMapping);
+      processParsedRows(rows);
       setStep('mapping');
     } catch (error) {
       console.error('Sheet parse error:', error);
       toast.error('Failed to parse Excel sheet');
+    }
+  };
+
+  const handleHeaderRowChange = (value: string) => {
+    const row = parseInt(value);
+    if (isNaN(row) || row < 1) return;
+    setHeaderRow(row);
+  };
+
+  const refreshData = () => {
+    if (!fileBuffer) return;
+
+    try {
+      let rows: CSVRow[] = [];
+      if (fileType === 'excel' && selectedSheet) {
+         rows = parseExcelSheet(fileBuffer, selectedSheet, headerRow - 1);
+      } else if (fileType === 'csv') {
+         const text = new TextDecoder().decode(fileBuffer);
+         // Note: CSV parser currently doesn't support header row skipping
+         rows = parseCSV(text);
+      }
+      
+      if (rows.length > 0) {
+        processParsedRows(rows);
+        toast.success(`Reloaded with header row ${headerRow}`);
+      }
+    } catch (error) {
+      console.error('Reparse error:', error);
+      toast.error('Failed to reparse file');
     }
   };
 
@@ -185,8 +205,10 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
     setImporting(true);
     
     try {
-      const items = mapCSVToBOM(csvData, mapping, currentProject.id, currentLocationId);
-      // Add metadata field which is required by createItem but not returned by mapCSVToBOM
+      // Use the new robust mapping function
+      const items = mapImportRowsToBOM(csvData, mapping, currentProject.id, currentLocationId);
+      
+      // Add metadata field which is required by createItem but not returned by mapImportRowsToBOM
       const itemsWithMetadata = items.map(item => ({ ...item, metadata: null }));
       await bulkImportItems(itemsWithMetadata);
       await loadItems(currentProject.id, currentLocationId);
@@ -209,6 +231,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
   const fields: { key: keyof ColumnMapping; label: string; required?: boolean }[] = [
     { key: 'partNumber', label: 'Part Number', required: true },
     { key: 'description', label: 'Description', required: true },
+    { key: 'secondaryDescription', label: 'Secondary Description' },
     { key: 'quantity', label: 'Quantity' },
     { key: 'manufacturer', label: 'Manufacturer' },
     { key: 'unit', label: 'Unit' },
@@ -282,8 +305,30 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
         {/* Step 3: Column Mapping */}
         {step === 'mapping' && (
           <div className="flex flex-col flex-1 min-h-0 space-y-4">
+            
+            {/* Header Row Selection */}
+            <div className="flex items-end gap-4 p-4 bg-muted/20 rounded-md border">
+              <div className="grid w-full max-w-sm items-center gap-1.5">
+                <Label htmlFor="header-row">Header Row</Label>
+                <Input 
+                  type="number" 
+                  id="header-row" 
+                  min={1} 
+                  value={headerRow} 
+                  onChange={(e) => handleHeaderRowChange(e.target.value)} 
+                />
+              </div>
+              <Button variant="outline" size="sm" onClick={refreshData}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Reload Headers
+              </Button>
+              <div className="text-xs text-muted-foreground flex-1 flex items-center h-10">
+                Change this if your column names are not in the first row.
+              </div>
+            </div>
+
             <p className="text-sm text-muted-foreground">
-              Map your CSV columns to BOM fields. Required fields are marked with *.
+              Map your columns to BOM fields. Required fields are marked with *.
             </p>
             
             <div className="grid grid-cols-2 gap-4 overflow-auto flex-1">
@@ -327,7 +372,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
           </div>
         )}
 
-        {/* Step 3: Preview */}
+        {/* Step 4: Preview */}
         {step === 'preview' && (
           <div className="flex flex-col flex-1 min-h-0">
             <div className="flex-1 overflow-auto border rounded-md">

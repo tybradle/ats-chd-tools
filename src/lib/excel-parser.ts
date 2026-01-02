@@ -7,9 +7,10 @@ import type { CSVRow } from '@/types/bom';
  * 
  * @param buffer - Uint8Array from file picker
  * @param sheetIndex - Zero-based sheet index (default: 0)
+ * @param headerRowIndex - Zero-based index of the header row (default: 0)
  * @returns Array of CSVRow objects
  */
-export function parseExcel(buffer: Uint8Array, sheetIndex = 0): CSVRow[] {
+export function parseExcel(buffer: Uint8Array, sheetIndex = 0, headerRowIndex = 0): CSVRow[] {
   try {
     // Read workbook from buffer
     const workbook = XLSX.read(buffer, { type: 'array' });
@@ -23,7 +24,7 @@ export function parseExcel(buffer: Uint8Array, sheetIndex = 0): CSVRow[] {
     }
     
     const sheetName = workbook.SheetNames[sheetIndex];
-    return parseExcelSheet(buffer, sheetName);
+    return parseExcelSheet(buffer, sheetName, headerRowIndex);
     
   } catch (error) {
     throw new Error(`Failed to parse Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -50,9 +51,10 @@ export function getExcelSheets(buffer: Uint8Array): string[] {
  * 
  * @param buffer - Uint8Array from file picker
  * @param sheetName - Name of the sheet to parse
+ * @param headerRowIndex - Zero-based index of the header row (default: 0)
  * @returns Array of CSVRow objects
  */
-export function parseExcelSheet(buffer: Uint8Array, sheetName: string): CSVRow[] {
+export function parseExcelSheet(buffer: Uint8Array, sheetName: string, headerRowIndex = 0): CSVRow[] {
   try {
     // Read workbook
     const workbook = XLSX.read(buffer, { type: 'array' });
@@ -64,18 +66,20 @@ export function parseExcelSheet(buffer: Uint8Array, sheetName: string): CSVRow[]
     }
     
     // Convert to JSON with array of arrays format
+    // Use range to start from the specified header row
     const rawData = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
       header: 1, // Array of arrays format
       defval: '', // Default empty cells to empty string
       raw: false, // Convert all values to strings
       blankrows: false, // Skip blank rows
+      range: headerRowIndex, // Start reading from this row index
     });
     
     if (rawData.length === 0) {
       return [];
     }
     
-    // First row is headers
+    // First row is headers (because we skipped previous rows using range)
     const headerRow = rawData[0];
     if (!Array.isArray(headerRow)) {
       throw new Error('Invalid Excel format: first row must contain headers');
