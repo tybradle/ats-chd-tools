@@ -16,21 +16,40 @@ pub fn run() {
             sql: include_str!("../migrations/002_bom_tables.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "Glenair Catalog tables",
+            sql: include_str!("../migrations/003_glenair_tables.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_sql::Builder::new()
-            .add_migrations("sqlite:ats-chd-tools.db", migrations)
-            .build())
+        .plugin(
+            tauri_plugin_sql::Builder::new()
+                .add_migrations("sqlite:ats-chd-tools.db", migrations)
+                .build(),
+        )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(
+            tauri_plugin_log::Builder::default()
+                .level(log::LevelFilter::Info)
+                .target(tauri_plugin_log::Target::new(
+                    tauri_plugin_log::TargetKind::Stdout,
+                ))
+                .target(tauri_plugin_log::Target::new(
+                    tauri_plugin_log::TargetKind::LogDir {
+                        file_name: Some("ats-chd-tools".to_string()),
+                    },
+                ))
+                .build(),
+        )
         .setup(|app| {
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
+            #[cfg(debug_assertions)]
+            {
+                let window = app.get_webview_window("main").unwrap();
+                window.open_devtools();
             }
             Ok(())
         })

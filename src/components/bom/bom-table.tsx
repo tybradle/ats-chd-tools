@@ -19,6 +19,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Copy, Search, Plus, FileUp, FileDown } from 'lucide-react';
 import { useBOMStore } from '@/stores/bom-store';
 import type { BOMItem } from '@/types/bom';
+import type { PartWithManufacturer } from '@/types/parts';
 import { PartSearchDialog } from './part-search-dialog';
 import { ImportDialog } from './import-dialog';
 import { ExportDialog } from './export-dialog';
@@ -162,7 +163,7 @@ export function BomTable() {
     },
   });
 
-  const handlePartSelect = (part: any) => {
+  const handlePartSelect = (part: PartWithManufacturer) => {
     if (!currentProject || !currentLocationId) return;
     
     createItem({
@@ -174,10 +175,10 @@ export function BomTable() {
       secondary_description: part.secondary_description,
       quantity: 1,
       unit: part.unit || 'EA',
-      unit_price: part.unit_price,
-      manufacturer: part.manufacturer,
-      supplier: part.supplier,
-      category: part.category,
+      unit_price: null,
+      manufacturer: part.manufacturer_name,
+      supplier: '',
+      category: part.category_name || '',
       reference_designator: '',
       is_spare: 0,
       sort_order: items.length + 1,

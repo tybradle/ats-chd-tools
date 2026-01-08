@@ -13,12 +13,12 @@ import { Label } from '@/components/ui/label';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { open } from '@tauri-apps/plugin-dialog';
 import { parseCSV, getCSVHeaders } from '@/lib/csv-parser';
-import { parseExcel, getExcelSheets, parseExcelSheet } from '@/lib/excel-parser';
+import { parseExcel, getExcelSheets, parseExcelSheet, getWorkbook } from '@/lib/excel-parser';
 import { mapImportRowsToBOM } from '@/lib/import-utils';
 import { useBOMStore } from '@/stores/bom-store';
 import type { ColumnMapping, CSVRow } from '@/types/bom';
 import { toast } from 'sonner';
-import { FileUp, ArrowRight, ArrowLeft, Check, RefreshCw } from 'lucide-react';
+import { FileUp, ArrowRight, ArrowLeft, Check, RefreshCw, Loader2 } from 'lucide-react';
 
 interface ImportDialogProps {
   open: boolean;
@@ -36,6 +36,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
   const [headers, setHeaders] = useState<string[]>([]);
   const [mapping, setMapping] = useState<ColumnMapping>({});
   const [importing, setImporting] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const { currentProject, currentLocationId, bulkImportItems, loadItems } = useBOMStore();
 
   const resetState = () => {
@@ -49,6 +50,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
     setHeaders([]);
     setMapping({});
     setImporting(false);
+    setProcessing(false);
   };
 
   const processParsedRows = (rows: CSVRow[]) => {
@@ -88,54 +90,71 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
       });
 
       if (selected && typeof selected === 'string') {
-        const contents = await readFile(selected);
-        const fileName = selected.toLowerCase();
+        setProcessing(true);
         
-        // Detect file type
-        const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
-        setFileType(isExcel ? 'excel' : 'csv');
-        setFileBuffer(contents);
-        
-        let rows: CSVRow[] = [];
-        
-        if (isExcel) {
-          // Excel file - check for multiple sheets
-          const sheets = getExcelSheets(contents);
-          setAvailableSheets(sheets);
-          
-          if (sheets.length === 0) {
-            toast.error('Excel file contains no sheets');
-            return;
+        // Give React a frame to show the processing spinner
+        setTimeout(async () => {
+          try {
+            const contents = await readFile(selected);
+            const fileName = selected.toLowerCase();
+            
+            // Detect file type
+            const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+            setFileType(isExcel ? 'excel' : 'csv');
+            setFileBuffer(contents);
+            
+            let rows: CSVRow[] = [];
+            
+            if (isExcel) {
+              // Excel file - check for multiple sheets
+              // USE OPTIMIZED SINGLE-PASS PARSING
+              const workbook = getWorkbook(contents);
+              const sheets = getExcelSheets(workbook);
+              setAvailableSheets(sheets);
+              
+              if (sheets.length === 0) {
+                toast.error('Excel file contains no sheets');
+                setProcessing(false);
+                return;
+              }
+              
+              if (sheets.length === 1) {
+                // Single sheet - parse directly
+                setSelectedSheet(sheets[0]);
+                rows = parseExcel(workbook, 0, headerRow - 1);
+                console.log(`Parsing single Excel sheet: "${sheets[0]}"`);
+              } else {
+                // Multiple sheets - show selection step
+                setStep('sheet-select');
+                setProcessing(false);
+                return;
+              }
+            } else {
+              // CSV file
+              const text = new TextDecoder().decode(contents);
+              rows = parseCSV(text);
+            }
+            
+            if (rows.length === 0) {
+              toast.error('File is empty or invalid');
+              setProcessing(false);
+              return;
+            }
+            
+            processParsedRows(rows);
+            setStep('mapping');
+          } catch (error) {
+            console.error('File parse error:', error);
+            toast.error('Failed to parse file');
+          } finally {
+            setProcessing(false);
           }
-          
-          if (sheets.length === 1) {
-            // Single sheet - parse directly
-            // Store the sheet name so we can re-parse if needed
-            setSelectedSheet(sheets[0]);
-            rows = parseExcel(contents, 0, headerRow - 1);
-            console.log(`Parsing single Excel sheet: "${sheets[0]}"`);
-          } else {
-            // Multiple sheets - show selection step
-            setStep('sheet-select');
-            return;
-          }
-        } else {
-          // CSV file
-          const text = new TextDecoder().decode(contents);
-          rows = parseCSV(text);
-        }
-        
-        if (rows.length === 0) {
-          toast.error('File is empty or invalid');
-          return;
-        }
-        
-        processParsedRows(rows);
-        setStep('mapping');
+        }, 10);
       }
     } catch (error) {
       console.error('File read error:', error);
       toast.error('Failed to read file');
+      setProcessing(false);
     }
   };
 
@@ -145,21 +164,28 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
       return;
     }
     
-    try {
-      const rows = parseExcelSheet(fileBuffer, selectedSheet, headerRow - 1);
-      
-      if (rows.length === 0) {
-        toast.error(`Sheet "${selectedSheet}" is empty`);
-        return;
+    setProcessing(true);
+    
+    setTimeout(() => {
+      try {
+        const workbook = getWorkbook(fileBuffer);
+        const rows = parseExcelSheet(workbook, selectedSheet, headerRow - 1);
+        
+        if (rows.length === 0) {
+          toast.error(`Sheet "${selectedSheet}" is empty`);
+          return;
+        }
+        
+        console.log(`Parsing Excel sheet: "${selectedSheet}"`);
+        processParsedRows(rows);
+        setStep('mapping');
+      } catch (error) {
+        console.error('Sheet parse error:', error);
+        toast.error('Failed to parse Excel sheet');
+      } finally {
+        setProcessing(false);
       }
-      
-      console.log(`Parsing Excel sheet: "${selectedSheet}"`);
-      processParsedRows(rows);
-      setStep('mapping');
-    } catch (error) {
-      console.error('Sheet parse error:', error);
-      toast.error('Failed to parse Excel sheet');
-    }
+    }, 10);
   };
 
   const handleHeaderRowChange = (value: string) => {
@@ -171,24 +197,31 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
   const refreshData = () => {
     if (!fileBuffer) return;
 
-    try {
-      let rows: CSVRow[] = [];
-      if (fileType === 'excel' && selectedSheet) {
-         rows = parseExcelSheet(fileBuffer, selectedSheet, headerRow - 1);
-      } else if (fileType === 'csv') {
-         const text = new TextDecoder().decode(fileBuffer);
-         // Note: CSV parser currently doesn't support header row skipping
-         rows = parseCSV(text);
+    setProcessing(true);
+
+    setTimeout(() => {
+      try {
+        let rows: CSVRow[] = [];
+        if (fileType === 'excel' && selectedSheet) {
+           const workbook = getWorkbook(fileBuffer);
+           rows = parseExcelSheet(workbook, selectedSheet, headerRow - 1);
+        } else if (fileType === 'csv') {
+           const text = new TextDecoder().decode(fileBuffer);
+           // Note: CSV parser currently doesn't support header row skipping
+           rows = parseCSV(text);
+        }
+        
+        if (rows.length > 0) {
+          processParsedRows(rows);
+          toast.success(`Reloaded with header row ${headerRow}`);
+        }
+      } catch (error) {
+        console.error('Reparse error:', error);
+        toast.error('Failed to reparse file');
+      } finally {
+        setProcessing(false);
       }
-      
-      if (rows.length > 0) {
-        processParsedRows(rows);
-        toast.success(`Reloaded with header row ${headerRow}`);
-      }
-    } catch (error) {
-      console.error('Reparse error:', error);
-      toast.error('Failed to reparse file');
-    }
+    }, 10);
   };
 
   const handleImport = async () => {
@@ -260,6 +293,15 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
             )}
           </DialogTitle>
         </DialogHeader>
+
+        {/* Processing Overlay */}
+        {processing && (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+            <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+            <p className="text-lg font-medium">Processing file...</p>
+            <p className="text-sm text-muted-foreground">This may take a moment for large files</p>
+          </div>
+        )}
 
         {/* Step 1: Upload */}
         {step === 'upload' && (

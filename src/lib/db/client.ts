@@ -67,36 +67,9 @@ export async function transaction<T>(fn: (db: Database) => Promise<T>): Promise<
 
 // Type-safe query helpers for common operations
 
-export interface Manufacturer {
-  id: number;
-  name: string;
-  code: string | null;
-  created_at: string;
-}
+import type { Manufacturer, Category, Part, PartWithManufacturer } from '@/types/parts';
 
-export interface Category {
-  id: number;
-  name: string;
-  parent_id: number | null;
-  created_at: string;
-}
-
-export interface Part {
-  id: number;
-  part_number: string;
-  manufacturer_id: number;
-  description: string;
-  secondary_description: string | null;
-  category_id: number | null;
-  unit: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface PartWithManufacturer extends Part {
-  manufacturer_name: string;
-  manufacturer_code: string | null;
-}
+export type { Manufacturer, Category, Part, PartWithManufacturer };
 
 export interface Setting {
   key: string;
@@ -151,25 +124,40 @@ export const categories = {
 // Parts
 export const parts = {
   getAll: () => query<PartWithManufacturer>(`
-    SELECT p.*, m.name as manufacturer_name, m.code as manufacturer_code
+    SELECT 
+      p.*, 
+      m.name as manufacturer_name, 
+      m.code as manufacturer_code,
+      c.name as category_name
     FROM parts p
     JOIN manufacturers m ON p.manufacturer_id = m.id
+    LEFT JOIN categories c ON p.category_id = c.id
     ORDER BY p.part_number
   `),
   
   getById: (id: number) =>
     query<PartWithManufacturer>(`
-      SELECT p.*, m.name as manufacturer_name, m.code as manufacturer_code
+      SELECT 
+        p.*, 
+        m.name as manufacturer_name, 
+        m.code as manufacturer_code,
+        c.name as category_name
       FROM parts p
       JOIN manufacturers m ON p.manufacturer_id = m.id
+      LEFT JOIN categories c ON p.category_id = c.id
       WHERE p.id = ?
     `, [id]).then(rows => rows[0] ?? null),
   
   search: (term: string, limit = 50) =>
     query<PartWithManufacturer>(`
-      SELECT p.*, m.name as manufacturer_name, m.code as manufacturer_code
+      SELECT 
+        p.*, 
+        m.name as manufacturer_name, 
+        m.code as manufacturer_code,
+        c.name as category_name
       FROM parts p
       JOIN manufacturers m ON p.manufacturer_id = m.id
+      LEFT JOIN categories c ON p.category_id = c.id
       WHERE p.id IN (
         SELECT rowid FROM parts_fts WHERE parts_fts MATCH ?
       )

@@ -2,18 +2,25 @@ import * as XLSX from 'xlsx';
 import type { CSVRow } from '@/types/bom';
 
 /**
+ * Get workbook from buffer
+ */
+export function getWorkbook(buffer: Uint8Array): XLSX.WorkBook {
+  return XLSX.read(buffer, { type: 'array' });
+}
+
+/**
  * Parse an Excel file (buffer) into CSVRow format
  * Uses the first sheet by default
  * 
- * @param buffer - Uint8Array from file picker
+ * @param buffer - Uint8Array from file picker or a pre-read workbook
  * @param sheetIndex - Zero-based sheet index (default: 0)
  * @param headerRowIndex - Zero-based index of the header row (default: 0)
  * @returns Array of CSVRow objects
  */
-export function parseExcel(buffer: Uint8Array, sheetIndex = 0, headerRowIndex = 0): CSVRow[] {
+export function parseExcel(buffer: Uint8Array | XLSX.WorkBook, sheetIndex = 0, headerRowIndex = 0): CSVRow[] {
   try {
-    // Read workbook from buffer
-    const workbook = XLSX.read(buffer, { type: 'array' });
+    // Read workbook if buffer is provided
+    const workbook = buffer instanceof Uint8Array ? getWorkbook(buffer) : buffer;
     
     if (workbook.SheetNames.length === 0) {
       throw new Error('Excel file contains no sheets');
@@ -24,7 +31,7 @@ export function parseExcel(buffer: Uint8Array, sheetIndex = 0, headerRowIndex = 
     }
     
     const sheetName = workbook.SheetNames[sheetIndex];
-    return parseExcelSheet(buffer, sheetName, headerRowIndex);
+    return parseExcelSheet(workbook, sheetName, headerRowIndex);
     
   } catch (error) {
     throw new Error(`Failed to parse Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -34,12 +41,12 @@ export function parseExcel(buffer: Uint8Array, sheetIndex = 0, headerRowIndex = 
 /**
  * Get list of sheet names from an Excel file
  * 
- * @param buffer - Uint8Array from file picker
+ * @param buffer - Uint8Array from file picker or a pre-read workbook
  * @returns Array of sheet names
  */
-export function getExcelSheets(buffer: Uint8Array): string[] {
+export function getExcelSheets(buffer: Uint8Array | XLSX.WorkBook): string[] {
   try {
-    const workbook = XLSX.read(buffer, { type: 'array' });
+    const workbook = buffer instanceof Uint8Array ? getWorkbook(buffer) : buffer;
     return workbook.SheetNames;
   } catch (error) {
     throw new Error(`Failed to read Excel sheets: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -49,15 +56,15 @@ export function getExcelSheets(buffer: Uint8Array): string[] {
 /**
  * Parse a specific sheet from an Excel file by name
  * 
- * @param buffer - Uint8Array from file picker
+ * @param buffer - Uint8Array from file picker or a pre-read workbook
  * @param sheetName - Name of the sheet to parse
  * @param headerRowIndex - Zero-based index of the header row (default: 0)
  * @returns Array of CSVRow objects
  */
-export function parseExcelSheet(buffer: Uint8Array, sheetName: string, headerRowIndex = 0): CSVRow[] {
+export function parseExcelSheet(buffer: Uint8Array | XLSX.WorkBook, sheetName: string, headerRowIndex = 0): CSVRow[] {
   try {
-    // Read workbook
-    const workbook = XLSX.read(buffer, { type: 'array' });
+    // Read workbook if buffer is provided
+    const workbook = buffer instanceof Uint8Array ? getWorkbook(buffer) : buffer;
     
     // Get sheet
     const sheet = workbook.Sheets[sheetName];

@@ -34,6 +34,35 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate test database
+        shell: bash
+        run: |
+          echo "Generating test data..."
+          node src-tauri/scripts/seed_bom_test_data.cjs
+          node src-tauri/scripts/generate_seed.js
+          
+          # Create database directory
+          mkdir -p src-tauri/test-db
+          
+          # Download SQLite CLI for Windows
+          SQLITE_VERSION="3470200"
+          curl -L "https://www.sqlite.org/2024/sqlite-tools-win-x64-${SQLITE_VERSION}.zip" -o sqlite.zip
+          unzip -q sqlite.zip
+          
+          # Initialize database with migrations
+          echo "Initializing database..."
+          SQLITE_DIR="sqlite-tools-win-x64-${SQLITE_VERSION}"
+          ./${SQLITE_DIR}/sqlite3.exe src-tauri/test-db/ats-chd-tools.db < src-tauri/migrations/001_initial.sql
+          ./${SQLITE_DIR}/sqlite3.exe src-tauri/test-db/ats-chd-tools.db < src-tauri/migrations/002_bom_tables.sql
+          ./${SQLITE_DIR}/sqlite3.exe src-tauri/test-db/ats-chd-tools.db < src-tauri/migrations/003_glenair_tables.sql
+          
+          # Apply seed data
+          echo "Seeding database..."
+          ./${SQLITE_DIR}/sqlite3.exe src-tauri/test-db/ats-chd-tools.db < src-tauri/scripts/seed_data.sql
+          ./${SQLITE_DIR}/sqlite3.exe src-tauri/test-db/ats-chd-tools.db < src-tauri/scripts/seed_bom_data.sql
+          
+          echo "Database ready at: src-tauri/test-db/ats-chd-tools.db"
+
       - name: Build Tauri app
         run: npm run tauri:build
 

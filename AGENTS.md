@@ -1,3 +1,22 @@
+<!-- OPENSPEC:START -->
+# OpenSpec Instructions
+
+These instructions are for AI assistants working in this project.
+
+Always open `@/openspec/AGENTS.md` when the request:
+- Mentions planning or proposals (words like proposal, spec, change, plan)
+- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
+- Sounds ambiguous and you need the authoritative spec before coding
+
+Use `@/openspec/AGENTS.md` to learn:
+- How to create and apply change proposals
+- Spec format and conventions
+- Project structure and guidelines
+
+Keep this managed block so 'openspec update' can refresh the instructions.
+
+<!-- OPENSPEC:END -->
+
 # ATS CHD Tools - AI Agent Guidelines
 
 ## Project Overview
@@ -21,6 +40,8 @@ npm run tauri:build   # Production build
 npm run lint          # ESLint check
 npm run lint -- --fix # Fix lint errors
 tsc -b                # Type check
+npm run db:seed:bom   # Seed BOM test data
+npm run db:reset      # Delete local DB (requires app restart)
 ```
 *(Testing to be configured - currently no test suite)*
 
@@ -34,6 +55,8 @@ tsc -b                # Type check
 - `src-tauri/migrations/`: SQLite schema migrations (numbered prefixes)
 
 ## Code Style & Conventions
+
+> **Note**: For comprehensive guidelines, see `CODE_STYLE.md`. The following is a summary of key patterns.
 
 ### 1. Imports & Path Aliases
 - Use `@/` alias for all internal imports (e.g., `@/components/ui/button`)
