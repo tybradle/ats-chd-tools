@@ -12,6 +12,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Plus, X, Pencil } from 'lucide-react';
 import { useBOMStore } from '@/stores/bom-store';
+import type { BOMLocationWithCount } from '@/types/bom';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -47,7 +48,7 @@ export function LocationTabs() {
     }
   };
 
-  const handleEditClick = (loc: any) => {
+  const handleEditClick = (loc: BOMLocationWithCount) => {
     setEditingLocation(loc);
     setEditName(loc.name);
     setEditExportName(loc.export_name || '');

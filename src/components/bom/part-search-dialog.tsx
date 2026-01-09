@@ -9,28 +9,34 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search } from 'lucide-react';
 import { query } from '@/lib/db/client';
+import type { Part } from '@/types/parts';
+
+interface SearchResult extends Part {
+  manufacturer?: string;
+  unit_price?: number;
+}
 
 interface PartSearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (part: any) => void;
+  onSelect: (part: SearchResult) => void;
 }
 
 export function PartSearchDialog({ open, onOpenChange, onSelect }: PartSearchDialogProps) {
   const [search, setSearch] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
 
   useEffect(() => {
     if (!open) return;
     
     const timer = setTimeout(async () => {
       if (!search.trim()) {
-        const rows = await query('SELECT * FROM parts LIMIT 20');
+        const rows = await query<SearchResult>('SELECT * FROM parts LIMIT 20');
         setResults(rows);
         return;
       }
 
-      const rows = await query(
+      const rows = await query<SearchResult>(
         'SELECT * FROM parts WHERE part_number LIKE ? OR description LIKE ? LIMIT 50',
         [`%${search}%`, `%${search}%`]
       );
