@@ -6,24 +6,35 @@ import {
   createColumnHelper,
 } from '@tanstack/react-table';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
+  DenseTable,
+  DenseTableBody,
+  DenseTableCell,
+  DenseTableHead,
+  DenseTableHeader,
+  DenseTableRow,
+} from '@/components/ui/dense-table';
+import { DenseInput } from '@/components/ui/dense-input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Copy, Search, Plus, FileUp, FileDown } from 'lucide-react';
 import { useBOMStore } from '@/stores/bom-store';
 import type { BOMItem } from '@/types/bom';
-import type { PartWithManufacturer } from '@/types/parts';
+
 import { PartSearchDialog } from './part-search-dialog';
 import { ImportDialog } from './import-dialog';
 import { ExportDialog } from './export-dialog';
 import { toast } from 'sonner';
+
+interface SearchResult {
+  id: number;
+  part_number: string;
+  description: string;
+  secondary_description?: string | null;
+  manufacturer?: string;
+  unit?: string;
+  unit_price?: number;
+  category?: string;
+}
 
 const columnHelper = createColumnHelper<BOMItem>();
 
@@ -68,61 +79,58 @@ export function BomTable() {
     columnHelper.accessor('part_number', {
       header: 'Part Number',
       cell: ({ getValue, row }) => (
-        <Input
+        <DenseInput
           value={getValue()}
           onChange={(e) => updateItem(row.original.id, { part_number: e.target.value })}
-          className="h-8 font-mono"
+          className="font-mono"
         />
       ),
     }),
     columnHelper.accessor('manufacturer', {
       header: 'Manufacturer',
       cell: ({ getValue, row }) => (
-        <Input
+        <DenseInput
           value={getValue() || ''}
           onChange={(e) => updateItem(row.original.id, { manufacturer: e.target.value })}
-          className="h-8"
         />
       ),
     }),
     columnHelper.accessor('description', {
       header: 'Description',
       cell: ({ getValue, row }) => (
-        <Input
+        <DenseInput
           value={getValue()}
           onChange={(e) => updateItem(row.original.id, { description: e.target.value })}
-          className="h-8"
         />
       ),
     }),
     columnHelper.accessor('quantity', {
       header: 'Qty',
       cell: ({ getValue, row }) => (
-        <Input
+        <DenseInput
           type="number"
           value={getValue()}
           onChange={(e) => updateItem(row.original.id, { quantity: parseFloat(e.target.value) || 0 })}
-          className="h-8 w-20"
+          className="w-20"
         />
       ),
     }),
     columnHelper.accessor('unit', {
       header: 'Unit',
       cell: ({ getValue, row }) => (
-        <Input
+        <DenseInput
           value={getValue()}
           onChange={(e) => updateItem(row.original.id, { unit: e.target.value })}
-          className="h-8 w-16"
+          className="w-16"
         />
       ),
     }),
     columnHelper.accessor('reference_designator', {
       header: 'Ref Des',
       cell: ({ getValue, row }) => (
-        <Input
+        <DenseInput
           value={getValue() || ''}
           onChange={(e) => updateItem(row.original.id, { reference_designator: e.target.value })}
-          className="h-8"
         />
       ),
     }),
@@ -163,7 +171,7 @@ export function BomTable() {
     },
   });
 
-  const handlePartSelect = (part: PartWithManufacturer) => {
+  const handlePartSelect = (part: SearchResult) => {
     if (!currentProject || !currentLocationId) return;
     
     createItem({
@@ -172,13 +180,13 @@ export function BomTable() {
       part_id: part.id,
       part_number: part.part_number,
       description: part.description,
-      secondary_description: part.secondary_description,
+      secondary_description: part.secondary_description ?? null,
       quantity: 1,
       unit: part.unit || 'EA',
-      unit_price: null,
-      manufacturer: part.manufacturer_name,
+      unit_price: part.unit_price ?? null,
+      manufacturer: part.manufacturer || '',
       supplier: '',
-      category: part.category_name || '',
+      category: part.category || '',
       reference_designator: '',
       is_spare: 0,
       sort_order: items.length + 1,
@@ -250,39 +258,37 @@ export function BomTable() {
         </div>
       </div>
 
-      <div className="border rounded-md overflow-hidden">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="p-1 px-2">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-            {items.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                  No items in this location.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <DenseTable>
+        <DenseTableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <DenseTableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <DenseTableHead key={header.id}>
+                  {flexRender(header.column.columnDef.header, header.getContext())}
+                </DenseTableHead>
+              ))}
+            </DenseTableRow>
+          ))}
+        </DenseTableHeader>
+        <DenseTableBody>
+          {table.getRowModel().rows.map((row) => (
+            <DenseTableRow key={row.id}>
+              {row.getVisibleCells().map((cell) => (
+                <DenseTableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </DenseTableCell>
+              ))}
+            </DenseTableRow>
+          ))}
+          {items.length === 0 && (
+            <DenseTableRow>
+              <DenseTableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                No items in this location.
+              </DenseTableCell>
+            </DenseTableRow>
+          )}
+        </DenseTableBody>
+      </DenseTable>
 
       <PartSearchDialog
         open={isSearchOpen}

@@ -11,7 +11,7 @@ import { Search } from 'lucide-react';
 import { query } from '@/lib/db/client';
 import type { Part } from '@/types/parts';
 
-interface SearchResult extends Part {
+export interface SearchResult extends Part {
   manufacturer?: string;
   unit_price?: number;
 }
