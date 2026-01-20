@@ -72,32 +72,32 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PROJ-01 | TBD | Pending |
-| PROJ-02 | TBD | Pending |
-| PROJ-03 | TBD | Pending |
-| PROJ-04 | TBD | Pending |
-| PROJ-05 | TBD | Pending |
-| BOM-01 | TBD | Pending |
-| BOM-02 | TBD | Pending |
-| BOM-03 | TBD | Pending |
-| BOM-04 | TBD | Pending |
-| BOM-05 | TBD | Pending |
-| BOM-06 | TBD | Pending |
-| DATA-01 | TBD | Pending |
-| DATA-02 | TBD | Pending |
-| DATA-03 | TBD | Pending |
-| DATA-04 | TBD | Pending |
-| UPD-01 | TBD | Pending |
-| UPD-02 | TBD | Pending |
-| UPD-03 | TBD | Pending |
-| APP-01 | TBD | Pending |
-| APP-02 | TBD | Pending |
-| REL-01 | TBD | Pending |
+| PROJ-01 | 1 | Pending |
+| PROJ-02 | 1 | Pending |
+| PROJ-03 | 1 | Pending |
+| PROJ-04 | 1 | Pending |
+| PROJ-05 | 1 | Pending |
+| BOM-01 | 2 | Pending |
+| BOM-02 | 2 | Pending |
+| BOM-03 | 2 | Pending |
+| BOM-04 | 2 | Pending |
+| BOM-05 | 2 | Pending |
+| BOM-06 | 2 | Pending |
+| DATA-01 | 3 | Pending |
+| DATA-02 | 3 | Pending |
+| DATA-03 | 3 | Pending |
+| DATA-04 | 3 | Pending |
+| UPD-01 | 4 | Pending |
+| UPD-02 | 4 | Pending |
+| UPD-03 | 4 | Pending |
+| APP-01 | 1 | Pending |
+| APP-02 | 4 | Pending |
+| REL-01 | 2 | Pending |
 
 **Coverage:**
 - v1 requirements: 21 total
-- Mapped to phases: 0
-- Unmapped: 21 ⚠️
+- Mapped to phases: 21
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-01-20*
