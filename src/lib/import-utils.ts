@@ -18,7 +18,7 @@ export function parseQuantity(value: string): number {
     const num = parseFloat(numStr);
     return isNaN(num) ? 1 : num;
   }
-  
+
   return 1;
 }
 
@@ -35,7 +35,7 @@ export function parseCurrency(value: string): number | null {
   // Remove common currency symbols and non-numeric chars except . and -
   // But be careful not to strip digits.
   // Strategy: Extract the first valid number sequence
-  
+
   const match = clean.match(/(\d{1,3}(,\d{3})*(\.\d+)?|\d+(\.\d+)?|\.\d+)/);
   if (match) {
     // Remove commas from "1,000.00" before parsing
@@ -43,7 +43,7 @@ export function parseCurrency(value: string): number | null {
     const num = parseFloat(numStr);
     return isNaN(num) ? null : num;
   }
-  
+
   return null;
 }
 
@@ -58,27 +58,27 @@ export function mapImportRowsToBOM(
   locationId: number
 ): Omit<BOMItem, 'id' | 'created_at' | 'updated_at' | 'metadata'>[] {
   if (rows.length === 0) return [];
-  
+
   const headers = Object.keys(rows[0]);
-  
+
   return rows.map((row, index) => {
     const getVal = (idx?: number): string => {
       if (idx === undefined) return '';
       const header = headers[idx];
       return header ? (row[header] || '') : '';
     };
-    
+
     // Robust parsing
     const quantityRaw = getVal(mapping.quantity);
     const priceRaw = getVal(mapping.unitPrice);
-    
+
     return {
       project_id: projectId,
       location_id: locationId,
       part_id: null,
       part_number: getVal(mapping.partNumber) || 'UNKNOWN',
       description: getVal(mapping.description) || '',
-      secondary_description: getVal(mapping.secondaryDescription) || null,
+      secondary_description: null,
       quantity: parseQuantity(quantityRaw),
       unit: getVal(mapping.unit) || 'EA',
       unit_price: parseCurrency(priceRaw),

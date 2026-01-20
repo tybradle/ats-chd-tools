@@ -91,7 +91,6 @@ export interface ImportPreview {
 export interface ColumnMapping {
   partNumber?: number;
   description?: number;
-  secondaryDescription?: number;
   manufacturer?: number;
   quantity?: number;
   unit?: number;

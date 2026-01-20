@@ -16,10 +16,11 @@ import { parseCSV, getCSVHeaders } from '@/lib/csv-parser';
 import { parseExcel, getExcelSheets, parseExcelSheet, getWorkbook } from '@/lib/excel-parser';
 import { mapImportRowsToBOM } from '@/lib/import-utils';
 import { useBOMStore } from '@/stores/bom-store';
+import { bomItems, isTauri } from '@/lib/db/client';
 import type { ColumnMapping, CSVRow } from '@/types/bom';
 import { toast } from 'sonner';
 import { FileUp, ArrowRight, ArrowLeft, Check, RefreshCw, Loader2 } from 'lucide-react';
-import { isTauri } from '@/lib/db/client';
+import { Progress } from '@/components/ui/progress';
 
 interface ImportDialogProps {
   open: boolean;
@@ -38,7 +39,8 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
   const [mapping, setMapping] = useState<ColumnMapping>({});
   const [importing, setImporting] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const { currentProject, currentLocationId, bulkImportItems, loadItems } = useBOMStore();
+  const [progress, setProgress] = useState<{ current: number; total: number; message: string } | null>(null);
+  const { currentProject, currentLocationId, loadItems } = useBOMStore();
 
   const resetState = () => {
     setStep('upload');
@@ -52,20 +54,21 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
     setMapping({});
     setImporting(false);
     setProcessing(false);
+    setProgress(null);
   };
 
   const processParsedRows = (rows: CSVRow[]) => {
     setCsvData(rows);
     setHeaders(getCSVHeaders(rows));
-    
+
     // Auto-map common column names
     const autoMapping: ColumnMapping = {};
     const headerLower = getCSVHeaders(rows).map(h => h.toLowerCase());
-    
+
     const mappings: [keyof ColumnMapping, string[]][] = [
       ['partNumber', ['part number', 'partnumber', 'part_number', 'part #', 'pn', 'item']],
       ['description', ['description', 'desc', 'name', 'item description']],
-      ['secondaryDescription', ['secondary description', 'details', 'specs', 'technical']],
+      // secondaryDescription removed per user request
       ['quantity', ['quantity', 'qty', 'count', 'amount']],
       ['manufacturer', ['manufacturer', 'mfg', 'mfr', 'vendor']],
       ['unit', ['unit', 'uom', 'units']],
@@ -74,12 +77,12 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
       ['supplier', ['supplier', 'vendor', 'distributor']],
       ['category', ['category', 'cat', 'type']],
     ];
-    
+
     mappings.forEach(([key, patterns]) => {
       const idx = headerLower.findIndex(h => patterns.some(p => h.includes(p)));
       if (idx !== -1) autoMapping[key] = idx;
     });
-    
+
     setMapping(autoMapping);
   };
 
@@ -98,8 +101,8 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
           const buffer = await file.arrayBuffer();
           const contents = new Uint8Array(buffer);
           const fileName = file.name.toLowerCase();
-          
-          processFileContents(contents, fileName);
+
+          setTimeout(() => processFileContents(contents, fileName), 10);
         } catch (error) {
           console.error('Browser file read error:', error);
           toast.error('Failed to read file');
@@ -118,7 +121,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
 
       if (selected && typeof selected === 'string') {
         setProcessing(true);
-        
+
         // Give React a frame to show the processing spinner
         setTimeout(async () => {
           try {
@@ -145,22 +148,22 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
       const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
       setFileType(isExcel ? 'excel' : 'csv');
       setFileBuffer(contents);
-      
+
       let rows: CSVRow[] = [];
-      
+
       if (isExcel) {
         // Excel file - check for multiple sheets
         // USE OPTIMIZED SINGLE-PASS PARSING
         const workbook = getWorkbook(contents);
         const sheets = getExcelSheets(workbook);
         setAvailableSheets(sheets);
-        
+
         if (sheets.length === 0) {
           toast.error('Excel file contains no sheets');
           setProcessing(false);
           return;
         }
-        
+
         if (sheets.length === 1) {
           // Single sheet - parse directly
           setSelectedSheet(sheets[0]);
@@ -177,15 +180,16 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
         const text = new TextDecoder().decode(contents);
         rows = parseCSV(text);
       }
-      
+
       if (rows.length === 0) {
         toast.error('File is empty or invalid');
         setProcessing(false);
         return;
       }
-      
+
       processParsedRows(rows);
       setStep('mapping');
+      setProcessing(false);
     } catch (error) {
       console.error('File parse error:', error);
       toast.error('Failed to parse file');
@@ -198,19 +202,19 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
       toast.error('Please select a sheet');
       return;
     }
-    
+
     setProcessing(true);
-    
+
     setTimeout(() => {
       try {
         const workbook = getWorkbook(fileBuffer);
         const rows = parseExcelSheet(workbook, selectedSheet, headerRow - 1);
-        
+
         if (rows.length === 0) {
           toast.error(`Sheet "${selectedSheet}" is empty`);
           return;
         }
-        
+
         console.log(`Parsing Excel sheet: "${selectedSheet}"`);
         processParsedRows(rows);
         setStep('mapping');
@@ -238,14 +242,14 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
       try {
         let rows: CSVRow[] = [];
         if (fileType === 'excel' && selectedSheet) {
-           const workbook = getWorkbook(fileBuffer);
-           rows = parseExcelSheet(workbook, selectedSheet, headerRow - 1);
+          const workbook = getWorkbook(fileBuffer);
+          rows = parseExcelSheet(workbook, selectedSheet, headerRow - 1);
         } else if (fileType === 'csv') {
-           const text = new TextDecoder().decode(fileBuffer);
-           // Note: CSV parser currently doesn't support header row skipping
-           rows = parseCSV(text);
+          const text = new TextDecoder().decode(fileBuffer);
+          // Note: CSV parser currently doesn't support header row skipping
+          rows = parseCSV(text);
         }
-        
+
         if (rows.length > 0) {
           processParsedRows(rows);
           toast.success(`Reloaded with header row ${headerRow}`);
@@ -264,23 +268,55 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
       toast.error('No location selected');
       return;
     }
-    
+
     if (mapping.partNumber === undefined) {
       toast.error('Part Number column is required');
       return;
     }
-    
+
     setImporting(true);
-    
+
     try {
-      // Use the new robust mapping function
-      const items = mapImportRowsToBOM(csvData, mapping, currentProject.id, currentLocationId);
-      
-      // Add metadata field which is required by createItem but not returned by mapImportRowsToBOM
-      const itemsWithMetadata = items.map(item => ({ ...item, metadata: null }));
-      await bulkImportItems(itemsWithMetadata);
+      const total = csvData.length;
+      setProgress({ current: 0, total, message: 'Preparing import...' });
+
+      // Give UI a chance to update
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Process in chunks
+      const CHUNK_SIZE = 100;
+      let processed = 0;
+
+      // 1. Map all items first (usually fast enough, but if very large we could chunk this too)
+      // For now, map all at once to get the full list
+      const allItems = mapImportRowsToBOM(csvData, mapping, currentProject.id, currentLocationId);
+      const itemsWithMetadata = allItems.map(item => ({ ...item, metadata: null }));
+
+      for (let i = 0; i < itemsWithMetadata.length; i += CHUNK_SIZE) {
+        const chunk = itemsWithMetadata.slice(i, i + CHUNK_SIZE);
+
+        // Update progress
+        setProgress({
+          current: processed,
+          total,
+          message: `Importing items ${processed + 1} - ${Math.min(processed + chunk.length, total)}...`
+        });
+
+        // Wait specifically to let UI render the progress update
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Import chunk directly to DB to avoid store overhead
+        await bomItems.bulkCreate(chunk);
+
+        processed += chunk.length;
+      }
+
+      setProgress({ current: total, total, message: 'Finalizing...' });
+
+      // Single reload at the end
       await loadItems(currentProject.id, currentLocationId);
-      toast.success(`Imported ${items.length} items`);
+
+      toast.success(`Imported ${total} items`);
       onOpenChange(false);
       resetState();
     } catch (error) {
@@ -288,6 +324,8 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
       toast.error('Import failed');
     } finally {
       setImporting(false);
+      // clear progress after a moment or immediately
+      // setProgress(null); // ResetState handles this
     }
   };
 
@@ -299,10 +337,10 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
   const fields: { key: keyof ColumnMapping; label: string; required?: boolean }[] = [
     { key: 'partNumber', label: 'Part Number', required: true },
     { key: 'description', label: 'Description', required: true },
-    { key: 'secondaryDescription', label: 'Secondary Description' },
+    // { key: 'secondaryDescription', label: 'Secondary Description' },
     { key: 'quantity', label: 'Quantity' },
     { key: 'manufacturer', label: 'Manufacturer' },
-    { key: 'unit', label: 'Unit' },
+    { key: 'unit', label: 'Unit of Measure' },
     { key: 'unitPrice', label: 'Unit Price' },
     { key: 'referenceDesignator', label: 'Ref Des' },
     { key: 'supplier', label: 'Supplier' },
@@ -317,10 +355,17 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+      <DialogContent
+        className={`max-h-[85vh] flex flex-col transition-all duration-300 ${step === 'preview'
+          ? '!w-[90vw] !max-w-[90vw]'
+          : step === 'mapping'
+            ? 'max-w-5xl'
+            : 'max-w-md'
+          }`}
+      >
         <DialogHeader>
           <DialogTitle>
-            Import BOM from {fileType === 'excel' ? 'Excel' : 'CSV'}
+            Import BOM from Excel
             {step !== 'upload' && step !== 'sheet-select' && (
               <span className="ml-2 text-sm font-normal text-muted-foreground">
                 ({csvData.length} rows)
@@ -329,12 +374,30 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
           </DialogTitle>
         </DialogHeader>
 
-        {/* Processing Overlay */}
-        {processing && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+        {/* Processing/Importing Overlay */}
+        {(processing || importing) && (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg p-6">
             <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-            <p className="text-lg font-medium">Processing file...</p>
-            <p className="text-sm text-muted-foreground">This may take a moment for large files</p>
+            <p className="text-lg font-medium mb-2">
+              {importing ? 'Importing Items...' : 'Processing file...'}
+            </p>
+
+            {importing && progress && (
+              <div className="w-full max-w-sm space-y-2 animate-in fade-in duration-300">
+                <Progress value={(progress.current / progress.total) * 100} className="h-2" />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{progress.message}</span>
+                  <span>{Math.round((progress.current / progress.total) * 100)}%</span>
+                </div>
+                <p className="text-xs text-center font-mono mt-1">
+                  {progress.current} / {progress.total} items
+                </p>
+              </div>
+            )}
+
+            {!importing && (
+              <p className="text-sm text-muted-foreground">This may take a moment for large files</p>
+            )}
           </div>
         )}
 
@@ -382,24 +445,26 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
         {/* Step 3: Column Mapping */}
         {step === 'mapping' && (
           <div className="flex flex-col flex-1 min-h-0 space-y-4">
-            
+
             {/* Header Row Selection */}
-            <div className="flex items-end gap-4 p-4 bg-muted/20 rounded-md border">
-              <div className="grid w-full max-w-sm items-center gap-1.5">
-                <Label htmlFor="header-row">Header Row</Label>
-                <Input 
-                  type="number" 
-                  id="header-row" 
-                  min={1} 
-                  value={headerRow} 
-                  onChange={(e) => handleHeaderRowChange(e.target.value)} 
-                />
+            <div className="flex flex-col gap-2 p-4 bg-muted/20 rounded-md border">
+              <div className="flex items-end gap-4">
+                <div className="grid w-full max-w-[200px] items-center gap-1.5">
+                  <Label htmlFor="header-row">Header Row</Label>
+                  <Input
+                    type="number"
+                    id="header-row"
+                    min={1}
+                    value={headerRow}
+                    onChange={(e) => handleHeaderRowChange(e.target.value)}
+                  />
+                </div>
+                <Button variant="outline" className="shrink-0" onClick={refreshData}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Reload Headers
+                </Button>
               </div>
-              <Button variant="outline" size="sm" onClick={refreshData}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Reload Headers
-              </Button>
-              <div className="text-xs text-muted-foreground flex-1 flex items-center h-10">
+              <div className="text-sm text-muted-foreground">
                 Change this if your column names are not in the first row.
               </div>
             </div>
@@ -407,7 +472,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
             <p className="text-sm text-muted-foreground">
               Map your columns to BOM fields. Required fields are marked with *.
             </p>
-            
+
             <div className="grid grid-cols-2 gap-4 overflow-auto flex-1">
               {fields.map(field => (
                 <div key={field.key} className="space-y-1">
@@ -417,9 +482,9 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
                   </label>
                   <Select
                     value={mapping[field.key]?.toString() ?? 'unmapped'}
-                    onValueChange={(val) => setMapping(prev => ({ 
-                      ...prev, 
-                      [field.key]: val === 'unmapped' ? undefined : parseInt(val) 
+                    onValueChange={(val) => setMapping(prev => ({
+                      ...prev,
+                      [field.key]: val === 'unmapped' ? undefined : parseInt(val)
                     }))}
                   >
                     <SelectTrigger>
@@ -435,7 +500,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
                 </div>
               ))}
             </div>
-            
+
             <div className="flex justify-between pt-4 border-t">
               <Button variant="outline" onClick={() => setStep('upload')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -484,11 +549,11 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
                 </TableBody>
               </Table>
             </div>
-            
+
             <p className="text-xs text-muted-foreground mt-2">
               Showing first {Math.min(15, csvData.length)} of {csvData.length} rows
             </p>
-            
+
             <div className="flex justify-between pt-4 border-t">
               <Button variant="outline" onClick={() => setStep('mapping')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />

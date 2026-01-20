@@ -240,7 +240,7 @@ export function BomTable() {
           </Button>
           <Button size="sm" variant="outline" onClick={() => setIsImportOpen(true)}>
             <FileUp className="w-4 h-4 mr-2" />
-            Import CSV
+            Import BOM
           </Button>
         </div>
 
