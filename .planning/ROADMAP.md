@@ -16,6 +16,14 @@ ATS CHD Tools is an offline-first Windows desktop platform (Tauri + React + SQLi
 
 **Requirements:** PROJ-01, PROJ-02, PROJ-03, PROJ-04, PROJ-05, APP-01
 
+**Plans:** 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Add SQLite migration for Project(job#) → Packages and preserve scope IDs
+- [ ] 01-02-PLAN.md — Add DB helpers + types for job projects and packages (real + mock)
+- [ ] 01-03-PLAN.md — Refactor BOM Zustand store to be package-scope-first
+- [ ] 01-04-PLAN.md — Implement BOM entry gating modal + scope sidebar + Project/Package CRUD UI
+
 **Success Criteria (observable):**
 1. Landing page shows module tiles; non-ready modules are disabled and labeled “Coming soon”.
 2. Entering the BOM module immediately prompts a Project Manager modal that the user can use without leaving the BOM context.
