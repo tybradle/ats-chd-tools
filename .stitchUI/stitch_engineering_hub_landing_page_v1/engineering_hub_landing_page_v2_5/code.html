@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BOM Translator - Tools Centralization</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#136dec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101822",
+                        "surface-dark": "#182029",
+                        "surface-darker": "#0d1218",
+                        "success": "#27c93f",
+                        "warning": "#ffbd2e",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d1218; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #282f39; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f4752; 
+        }.spreadsheet-cell {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display h-screen flex overflow-hidden selection:bg-primary/30 selection:text-white">
+<aside class="w-64 flex-shrink-0 bg-surface-darker border-r border-white/5 flex flex-col justify-between z-20">
+<div>
+<div class="h-16 flex items-center px-6 border-b border-white/5">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[20px]">grid_view</span>
+</div>
+<div>
+<h1 class="text-white text-base font-bold leading-none">ToolHub</h1>
+<p class="text-slate-500 text-xs font-normal mt-0.5">Centralization v2.1</p>
+</div>
+</div>
+</div>
+<nav class="p-4 flex flex-col gap-2">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">construction</span>
+<span class="text-sm font-medium">Toolsets</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">database</span>
+<span class="text-sm font-medium">Database Tools</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">admin_panel_settings</span>
+<span class="text-sm font-medium">Admin</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</nav>
+</div>
+<div class="p-4 border-t border-white/5">
+<div class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
+<div class="w-8 h-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 border border-white/10" data-alt="User avatar gradient" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCmVCYIZsIHxXlHdxU1vmW-Z3ZZBnKGdNRAxcn0cS_kEf6vHqLxDJEc3HkzMfnQY9ccYKAS54u74eGNdiUQJOr9QtUmtucHq47xWhLKdmjZeJ4ieVXczlNbT6IiXfuv6Zwkz8Xmi8w9Adzly4OyNFElGWZYHXLSkkRR4EKWFby-HIAJVVNgKMLLtZ4u6lEpoSFrZ8LGABSNvmewbdORRLs_4DpQp3pZlAlFofbDkjwH7dw06Xx8jNcuMOeMJfOztbn6s3N9YctD_5Y');"></div>
+<div class="flex flex-col">
+<span class="text-sm font-medium text-white">Alex Dev</span>
+<span class="text-xs text-slate-500">Sr. Engineer</span>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark relative">
+<header class="h-16 border-b border-white/5 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-30">
+<div class="flex items-center gap-2 text-sm">
+<a class="text-slate-500 hover:text-white transition-colors" href="#">Projects</a>
+<span class="text-slate-700">/</span>
+<span class="text-white font-medium flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">description</span>
+                    Project Alpha-X
+                </span>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 bg-surface-dark border border-white/10 hover:bg-white/5 text-slate-300 text-sm font-medium px-4 py-2 rounded-lg transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+<span>Project Settings</span>
+</button>
+<div class="h-6 w-px bg-white/10"></div>
+<button class="flex items-center gap-2 bg-surface-dark border border-white/10 hover:bg-white/5 text-slate-300 text-sm font-medium px-4 py-2 rounded-lg transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]">upload_file</span>
+<span>Import Source BOM</span>
+</button>
+<button class="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Export Translated</span>
+</button>
+</div>
+</header>
+<div class="bg-surface-dark border-b border-white/5 flex items-end px-2 pt-2 gap-1 select-none z-20 overflow-x-auto">
+<div class="flex items-center gap-2 px-4 py-2 bg-background-dark border-t border-x border-white/10 rounded-t-lg text-white text-sm font-medium relative top-[1px] z-10 shadow-sm min-w-[120px] justify-center cursor-default group">
+<span class="material-symbols-outlined text-[16px] text-green-500">check_circle</span>
+                Site A
+            </div>
+<div class="flex items-center gap-2 px-4 py-2 bg-surface-dark hover:bg-white/5 text-slate-400 text-sm font-medium rounded-t-lg cursor-pointer transition-colors border-t border-x border-transparent hover:border-white/5 min-w-[120px] justify-center relative top-[1px]">
+                Site B
+            </div>
+<div class="flex items-center gap-2 px-4 py-2 bg-surface-dark hover:bg-white/5 text-slate-400 text-sm font-medium rounded-t-lg cursor-pointer transition-colors border-t border-x border-transparent hover:border-white/5 min-w-[140px] justify-center relative top-[1px]">
+                Assembly Line 1
+            </div>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-slate-500 hover:text-primary transition-colors ml-1 mb-0.5">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<div class="flex-1 overflow-hidden bg-surface-darker relative flex flex-col">
+<div class="h-10 bg-surface-dark border-b border-white/5 flex items-center px-4 gap-4 text-slate-400 text-xs font-mono">
+<div class="flex items-center gap-2 px-2 py-1 bg-white/5 rounded border border-white/5 min-w-[100px]">
+<span class="text-slate-500">fx</span>
+<span class="text-white">VLOOKUP(A2, Master_DB, 3, FALSE)</span>
+</div>
+<div class="w-px h-4 bg-white/10"></div>
+<div class="flex items-center gap-3">
+<span class="hover:text-white cursor-pointer flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">filter_alt</span> Filter</span>
+<span class="hover:text-white cursor-pointer flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">sort</span> Sort</span>
+<span class="hover:text-white cursor-pointer flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">find_replace</span> Find</span>
+</div>
+<div class="flex-1"></div>
+<div class="text-slate-500">458 Rows / 5 Columns</div>
+</div>
+<div class="flex-1 overflow-auto">
+<table class="w-full text-left border-collapse table-fixed min-w-[1000px]">
+<thead class="bg-surface-dark sticky top-0 z-10 text-xs text-slate-400 font-semibold select-none shadow-sm">
+<tr>
+<th class="w-12 border-r border-b border-white/10 p-2 text-center bg-surface-darker/50">#</th>
+<th class="w-48 border-r border-b border-white/10 px-3 py-2 bg-surface-dark hover:bg-white/5 cursor-pointer group">
+<div class="flex items-center justify-between">
+                                    Original Part #
+                                    <span class="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100">arrow_drop_down</span>
+</div>
+</th>
+<th class="w-[30%] border-r border-b border-white/10 px-3 py-2 bg-surface-dark hover:bg-white/5 cursor-pointer group">
+<div class="flex items-center justify-between">
+                                    Description
+                                    <span class="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100">arrow_drop_down</span>
+</div>
+</th>
+<th class="w-24 border-r border-b border-white/10 px-3 py-2 bg-surface-dark hover:bg-white/5 cursor-pointer text-right group">
+<div class="flex items-center justify-end gap-2">
+                                    Qty
+                                    <span class="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100">arrow_drop_down</span>
+</div>
+</th>
+<th class="w-48 border-r border-b border-white/10 px-3 py-2 bg-surface-dark hover:bg-white/5 cursor-pointer group">
+<div class="flex items-center justify-between">
+                                    Translated Part #
+                                    <span class="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100">arrow_drop_down</span>
+</div>
+</th>
+<th class="w-32 border-r border-b border-white/10 px-3 py-2 bg-surface-dark hover:bg-white/5 cursor-pointer group">
+<div class="flex items-center justify-between">
+                                    Status
+                                    <span class="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100">arrow_drop_down</span>
+</div>
+</th>
+</tr>
+</thead>
+<tbody class="text-sm text-slate-300 font-mono divide-y divide-white/5 bg-background-dark">
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="border-r border-white/5 px-2 py-1.5 text-center text-xs text-slate-500 bg-surface-darker/30">1</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell font-medium text-white">PT-100-X-BASE</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-slate-400">Main Chassis Assembly Base Unit</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-right">1</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-primary">PT-100-X-EU</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-success/10 text-success border border-success/20">
+                                    Matched
+                                </span>
+</td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors group bg-primary/[0.02]">
+<td class="border-r border-white/5 px-2 py-1.5 text-center text-xs text-slate-500 bg-surface-darker/30">2</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell font-medium text-white">SCR-055-HEX</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-slate-400">M5x20 Hex Head Screw, Stainless</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-right">24</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-primary">ISO-4017-M5x20</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-success/10 text-success border border-success/20">
+                                    Matched
+                                </span>
+</td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="border-r border-white/5 px-2 py-1.5 text-center text-xs text-slate-500 bg-surface-darker/30">3</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell font-medium text-white">WSH-055-FLT</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-slate-400">M5 Flat Washer</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-right">24</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-primary">ISO-7089-5</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-success/10 text-success border border-success/20">
+                                    Matched
+                                </span>
+</td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors group bg-warning/[0.02]">
+<td class="border-r border-white/5 px-2 py-1.5 text-center text-xs text-slate-500 bg-surface-darker/30">4</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell font-medium text-white">MTR-200-DC</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-slate-400">DC Motor 12V 5000RPM</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-right">2</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-slate-500 italic">--</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-warning/10 text-warning border border-warning/20">
+                                    Review
+                                </span>
+</td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="border-r border-white/5 px-2 py-1.5 text-center text-xs text-slate-500 bg-surface-darker/30">5</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell font-medium text-white">CBL-PWR-US</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-slate-400">Power Cable US Standard 1.5m</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-right">1</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-primary">CBL-PWR-EU-V2</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                    Substituted
+                                </span>
+</td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="border-r border-white/5 px-2 py-1.5 text-center text-xs text-slate-500 bg-surface-darker/30">6</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell font-medium text-white">PCB-CTRL-V3</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-slate-400">Control Board Main V3.2</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-right">1</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-primary">PCB-CTRL-V3-EU</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-success/10 text-success border border-success/20">
+                                    Matched
+                                </span>
+</td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors group bg-red-500/[0.02]">
+<td class="border-r border-white/5 px-2 py-1.5 text-center text-xs text-slate-500 bg-surface-darker/30">7</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell font-medium text-white">OBS-PART-001</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-slate-400">Legacy Connector - Obsolete</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-right">4</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-red-400">No Match</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                                    Missing
+                                </span>
+</td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="border-r border-white/5 px-2 py-1.5 text-center text-xs text-slate-500 bg-surface-darker/30">8</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell font-medium text-white">BRKT-L-04</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-slate-400">L-Bracket 40x40x4 Aluminum</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-right">8</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-primary">BRKT-L-04-A</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-success/10 text-success border border-success/20">
+                                    Matched
+                                </span>
+</td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="border-r border-white/5 px-2 py-1.5 text-center text-xs text-slate-500 bg-surface-darker/30">9</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell font-medium text-white">NUT-055-NYL</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-slate-400">M5 Nylon Lock Nut</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-right">24</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-primary">ISO-7040-M5</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-success/10 text-success border border-success/20">
+                                    Matched
+                                </span>
+</td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="border-r border-white/5 px-2 py-1.5 text-center text-xs text-slate-500 bg-surface-darker/30">10</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell font-medium text-white">CVR-PLST-TP</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-slate-400">Top Plastic Cover ABS</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-right">1</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-primary">CVR-PLST-TP-V2</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-success/10 text-success border border-success/20">
+                                    Matched
+                                </span>
+</td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="border-r border-white/5 px-2 py-1.5 text-center text-xs text-slate-500 bg-surface-darker/30">11</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell font-medium text-white"></td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-slate-400"></td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-right"></td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-primary"></td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell"></td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="border-r border-white/5 px-2 py-1.5 text-center text-xs text-slate-500 bg-surface-darker/30">12</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell font-medium text-white"></td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-slate-400"></td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-right"></td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-primary"></td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell"></td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="border-r border-white/5 px-2 py-1.5 text-center text-xs text-slate-500 bg-surface-darker/30">13</td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell font-medium text-white"></td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-slate-400"></td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-right"></td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell text-primary"></td>
+<td class="border-r border-white/5 px-3 py-1.5 spreadsheet-cell"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<button class="absolute bottom-6 right-6 w-12 h-12 bg-primary hover:bg-blue-600 rounded-full shadow-lg shadow-primary/30 text-white flex items-center justify-center transition-transform hover:scale-105 active:scale-95 z-20">
+<span class="material-symbols-outlined text-[24px]">add</span>
+</button>
+</div>
+<footer class="h-8 bg-[#0d1218] border-t border-white/5 flex items-center justify-between px-4 text-[11px] font-mono text-slate-500 select-none flex-shrink-0 z-20">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5 hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px]">wifi</span>
+<span>us-east-1</span>
+</div>
+<div class="flex items-center gap-1.5 hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px]">database</span>
+<span>DB: Connected</span>
+</div>
+<div class="flex items-center gap-1.5 hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px] text-green-500">check_circle</span>
+<span>BOM Sync Active</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center gap-2">
+<span>Records: 458</span>
+<span class="w-px h-3 bg-white/10"></span>
+<span>Last Saved: Just now</span>
+</div>
+<div class="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px]">notifications</span>
+</div>
+</div>
+</footer>
+</main>
+
+</body></html>

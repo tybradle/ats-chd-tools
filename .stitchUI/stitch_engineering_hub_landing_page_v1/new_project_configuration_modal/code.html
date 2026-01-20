@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Create New Project - Engineering Tools Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#136dec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101822",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: "Space Grotesk", sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen flex items-center justify-center p-4">
+<!-- Modal Backdrop -->
+<div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-0"></div>
+<!-- Modal Container -->
+<div class="relative z-10 w-full max-w-[600px] bg-white dark:bg-[#111418] border border-gray-200 dark:border-[#3b4554] rounded-xl shadow-2xl overflow-hidden flex flex-col">
+<!-- PageHeading Component Style -->
+<div class="p-6 border-b border-gray-100 dark:border-[#3b4554]">
+<div class="flex flex-col gap-1">
+<h1 class="text-gray-900 dark:text-white text-2xl font-bold leading-tight flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">add_box</span>
+                    Create New Project
+                </h1>
+<p class="text-gray-500 dark:text-[#9da8b9] text-sm font-normal">
+                    Configure the details for your new engineering project. Fields marked with an asterisk are required.
+                </p>
+</div>
+</div>
+<!-- Form Content -->
+<div class="p-6 space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- TextField Component (Required: Project Number) -->
+<div class="flex flex-col gap-2">
+<label class="flex flex-col">
+<span class="text-gray-700 dark:text-white text-sm font-medium pb-2 flex items-center gap-1">
+                            Project Number <span class="text-primary">*</span>
+</span>
+<input class="form-input w-full rounded-lg border border-gray-300 dark:border-[#3b4554] bg-gray-50 dark:bg-[#1c2027] text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary h-12 placeholder:text-gray-400 dark:placeholder:text-[#9da8b9] px-4 text-sm font-normal transition-all" placeholder="e.g., PRJ-2024-001" required="" type="text"/>
+</label>
+</div>
+<!-- TextField Component (Required: Package Name) -->
+<div class="flex flex-col gap-2">
+<label class="flex flex-col">
+<span class="text-gray-700 dark:text-white text-sm font-medium pb-2 flex items-center gap-1">
+                            Package Name <span class="text-primary">*</span>
+</span>
+<input class="form-input w-full rounded-lg border border-gray-300 dark:border-[#3b4554] bg-gray-50 dark:bg-[#1c2027] text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary h-12 placeholder:text-gray-400 dark:placeholder:text-[#9da8b9] px-4 text-sm font-normal transition-all" placeholder="e.g., Core-API-Suite" required="" type="text"/>
+</label>
+</div>
+<!-- TextField Component (Optional: Customer) -->
+<div class="flex flex-col gap-2">
+<label class="flex flex-col">
+<span class="text-gray-700 dark:text-white text-sm font-medium pb-2">
+                            Customer (Optional)
+                        </span>
+<input class="form-input w-full rounded-lg border border-gray-300 dark:border-[#3b4554] bg-gray-50 dark:bg-[#1c2027] text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary h-12 placeholder:text-gray-400 dark:placeholder:text-[#9da8b9] px-4 text-sm font-normal transition-all" placeholder="Enter customer name" type="text"/>
+</label>
+</div>
+<!-- TextField Component (Optional: Project Name) -->
+<div class="flex flex-col gap-2">
+<label class="flex flex-col">
+<span class="text-gray-700 dark:text-white text-sm font-medium pb-2">
+                            Project Name (Optional)
+                        </span>
+<input class="form-input w-full rounded-lg border border-gray-300 dark:border-[#3b4554] bg-gray-50 dark:bg-[#1c2027] text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary h-12 placeholder:text-gray-400 dark:placeholder:text-[#9da8b9] px-4 text-sm font-normal transition-all" placeholder="Internal project nickname" type="text"/>
+</label>
+</div>
+</div>
+<!-- Additional Detail Field (Generated to match style) -->
+<div class="flex flex-col gap-2">
+<label class="flex flex-col">
+<span class="text-gray-700 dark:text-white text-sm font-medium pb-2">
+                        Description
+                    </span>
+<textarea class="form-input w-full rounded-lg border border-gray-300 dark:border-[#3b4554] bg-gray-50 dark:bg-[#1c2027] text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary min-h-[100px] placeholder:text-gray-400 dark:placeholder:text-[#9da8b9] p-4 text-sm font-normal transition-all" placeholder="Briefly describe the project objectives..."></textarea>
+</label>
+</div>
+</div>
+<!-- Footer / Action Buttons -->
+<div class="p-6 bg-gray-50 dark:bg-[#1c2027]/50 border-t border-gray-100 dark:border-[#3b4554] flex justify-end items-center gap-3">
+<button class="px-5 h-11 rounded-lg border border-gray-300 dark:border-[#3b4554] text-gray-700 dark:text-[#9da8b9] hover:bg-gray-100 dark:hover:bg-[#3b4554] transition-colors text-sm font-medium">
+                Cancel
+            </button>
+<button class="px-6 h-11 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors text-sm font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">save</span>
+                Save Project
+            </button>
+</div>
+</div>
+<!-- Visual Hint Background Decoration -->
+<div class="fixed top-10 left-10 opacity-10 pointer-events-none">
+<img class="w-48 h-48 rounded-full object-cover grayscale" data-alt="Technical blueprint or engineering schematic background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZUx_tyqsGZR-aOCejw_JJfdmAUNIp7OI22vyJ9cZOoEeBdl5VLx9nL9RD3AtVHJ3U5ysyg2xutr8z3VixiiFGyqQUdj2yKvuyXoi1mbt-PN77ql7xocWo21jNTNE785vgrwZwLyo94U5CuC-eXO7LUyHlSyHtr7zD1y6joHYuyemFWpBRiHFp5K_hTUoVf0FciRdoY-8ATVkYA9dOKwSEG3x_EhmNzTu9qgX7roX-dwAPpjcJwuG_N79f_3-BoUrl-9sO-kpUPyE"/>
+</div>
+</body></html>

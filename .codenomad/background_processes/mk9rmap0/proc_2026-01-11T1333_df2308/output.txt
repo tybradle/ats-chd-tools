@@ -1,0 +1,55 @@
+
+> ats-chd-tools@0.0.0 lint
+> eslint .
+
+
+/home/dev/projects/ats-chd-tools/.hive/.worktrees/stitch-ui-remediation/03-refactor-bom-table/src/components/bom/bom-table.tsx
+  152:17  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/home/dev/projects/ats-chd-tools/.hive/.worktrees/stitch-ui-remediation/03-refactor-bom-table/src/components/bom/bom-table.tsx:152:17
+  150 |   ], [updateItem, deleteItem, duplicateItem]);
+  151 |
+> 152 |   const table = useReactTable({
+      |                 ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  153 |     data: items,
+  154 |     columns,
+  155 |     getCoreRowModel: getCoreRowModel(),  react-hooks/incompatible-library
+
+/home/dev/projects/ats-chd-tools/.hive/.worktrees/stitch-ui-remediation/03-refactor-bom-table/src/components/parts/part-dialog.tsx
+  129:24  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/home/dev/projects/ats-chd-tools/.hive/.worktrees/stitch-ui-remediation/03-refactor-bom-table/src/components/parts/part-dialog.tsx:129:24
+  127 |             <div className="col-span-3">
+  128 |               <Select
+> 129 |                 value={form.watch("manufacturer_id")?.toString() || ""}
+      |                        ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  130 |                 onValueChange={(value) => form.setValue("manufacturer_id", Number(value), { shouldValidate: true })}
+  131 |               >
+  132 |                 <SelectTrigger className={form.formState.errors.manufacturer_id ? "border-red-500" : ""}>  react-hooks/incompatible-library
+
+/home/dev/projects/ats-chd-tools/.hive/.worktrees/stitch-ui-remediation/03-refactor-bom-table/src/components/parts/parts-table.tsx
+  115:17  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/home/dev/projects/ats-chd-tools/.hive/.worktrees/stitch-ui-remediation/03-refactor-bom-table/src/components/parts/parts-table.tsx:115:17
+  113 |   ];
+  114 |
+> 115 |   const table = useReactTable({
+      |                 ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  116 |     data: parts,
+  117 |     columns,
+  118 |     getCoreRowModel: getCoreRowModel(),  react-hooks/incompatible-library
+
+/home/dev/projects/ats-chd-tools/.hive/.worktrees/stitch-ui-remediation/03-refactor-bom-table/src/components/ui/badge.tsx
+  46:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/home/dev/projects/ats-chd-tools/.hive/.worktrees/stitch-ui-remediation/03-refactor-bom-table/src/components/ui/button.tsx
+  62:18  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+✖ 5 problems (2 errors, 3 warnings)
+

@@ -44,6 +44,7 @@ interface BOMStore {
   deleteItem: (id: number) => Promise<void>;
   bulkDeleteItems: (ids: number[]) => Promise<void>;
   duplicateItem: (id: number) => Promise<void>;
+  moveItem: (id: number, direction: 'up' | 'down') => Promise<void>;
   bulkImportItems: (items: Omit<BOMItem, 'id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
 
   // UI Actions
@@ -345,6 +346,39 @@ export const useBOMStore = create<BOMStore>((set, get) => ({
         loading: false,
       });
       throw error;
+    }
+  },
+
+  moveItem: async (id, direction) => {
+    const items = [...get().items];
+    const index = items.findIndex((item) => item.id === id);
+    if (index === -1) return;
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= items.length) return;
+
+    // Swap sort_order
+    const currentItem = items[index];
+    const targetItem = items[targetIndex];
+
+    const currentOrder = currentItem.sort_order;
+    const targetOrder = targetItem.sort_order;
+
+    try {
+      await Promise.all([
+        bomItems.update(currentItem.id, { sort_order: targetOrder }),
+        bomItems.update(targetItem.id, { sort_order: currentOrder }),
+      ]);
+      
+      const projectId = get().currentProject?.id;
+      const locationId = get().currentLocationId;
+      if (projectId && locationId) {
+        await get().loadItems(projectId, locationId);
+      }
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to move item',
+      });
     }
   },
 

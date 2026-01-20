@@ -1,0 +1,2 @@
+src/components/ui/dense-input.tsx
+src/components/ui/dense-table.tsx

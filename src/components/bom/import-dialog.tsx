@@ -19,6 +19,7 @@ import { useBOMStore } from '@/stores/bom-store';
 import type { ColumnMapping, CSVRow } from '@/types/bom';
 import { toast } from 'sonner';
 import { FileUp, ArrowRight, ArrowLeft, Check, RefreshCw, Loader2 } from 'lucide-react';
+import { isTauri } from '@/lib/db/client';
 
 interface ImportDialogProps {
   open: boolean;
@@ -83,6 +84,32 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
   };
 
   const handleFilePick = async () => {
+    // Browser Fallback
+    if (!isTauri) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.csv,.txt,.xlsx,.xls';
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+
+        setProcessing(true);
+        try {
+          const buffer = await file.arrayBuffer();
+          const contents = new Uint8Array(buffer);
+          const fileName = file.name.toLowerCase();
+          
+          processFileContents(contents, fileName);
+        } catch (error) {
+          console.error('Browser file read error:', error);
+          toast.error('Failed to read file');
+          setProcessing(false);
+        }
+      };
+      input.click();
+      return;
+    }
+
     try {
       const selected = await open({
         multiple: false,
@@ -97,63 +124,71 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
           try {
             const contents = await readFile(selected);
             const fileName = selected.toLowerCase();
-            
-            // Detect file type
-            const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
-            setFileType(isExcel ? 'excel' : 'csv');
-            setFileBuffer(contents);
-            
-            let rows: CSVRow[] = [];
-            
-            if (isExcel) {
-              // Excel file - check for multiple sheets
-              // USE OPTIMIZED SINGLE-PASS PARSING
-              const workbook = getWorkbook(contents);
-              const sheets = getExcelSheets(workbook);
-              setAvailableSheets(sheets);
-              
-              if (sheets.length === 0) {
-                toast.error('Excel file contains no sheets');
-                setProcessing(false);
-                return;
-              }
-              
-              if (sheets.length === 1) {
-                // Single sheet - parse directly
-                setSelectedSheet(sheets[0]);
-                rows = parseExcel(workbook, 0, headerRow - 1);
-                console.log(`Parsing single Excel sheet: "${sheets[0]}"`);
-              } else {
-                // Multiple sheets - show selection step
-                setStep('sheet-select');
-                setProcessing(false);
-                return;
-              }
-            } else {
-              // CSV file
-              const text = new TextDecoder().decode(contents);
-              rows = parseCSV(text);
-            }
-            
-            if (rows.length === 0) {
-              toast.error('File is empty or invalid');
-              setProcessing(false);
-              return;
-            }
-            
-            processParsedRows(rows);
-            setStep('mapping');
+            processFileContents(contents, fileName);
           } catch (error) {
-            console.error('File parse error:', error);
-            toast.error('Failed to parse file');
-          } finally {
+            console.error('File read error:', error);
+            toast.error('Failed to read file');
             setProcessing(false);
           }
         }, 10);
       }
     } catch (error) {
-      console.error('File read error:', error);
-      toast.error('Failed to read file');
+      console.error('Dialog error:', error);
+      toast.error('Failed to open file dialog');
+      setProcessing(false);
+    }
+  };
+
+  const processFileContents = (contents: Uint8Array, fileName: string) => {
+    try {
+      // Detect file type
+      const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+      setFileType(isExcel ? 'excel' : 'csv');
+      setFileBuffer(contents);
+      
+      let rows: CSVRow[] = [];
+      
+      if (isExcel) {
+        // Excel file - check for multiple sheets
+        // USE OPTIMIZED SINGLE-PASS PARSING
+        const workbook = getWorkbook(contents);
+        const sheets = getExcelSheets(workbook);
+        setAvailableSheets(sheets);
+        
+        if (sheets.length === 0) {
+          toast.error('Excel file contains no sheets');
+          setProcessing(false);
+          return;
+        }
+        
+        if (sheets.length === 1) {
+          // Single sheet - parse directly
+          setSelectedSheet(sheets[0]);
+          rows = parseExcel(workbook, 0, headerRow - 1);
+          console.log(`Parsing single Excel sheet: "${sheets[0]}"`);
+        } else {
+          // Multiple sheets - show selection step
+          setStep('sheet-select');
+          setProcessing(false);
+          return;
+        }
+      } else {
+        // CSV file
+        const text = new TextDecoder().decode(contents);
+        rows = parseCSV(text);
+      }
+      
+      if (rows.length === 0) {
+        toast.error('File is empty or invalid');
+        setProcessing(false);
+        return;
+      }
+      
+      processParsedRows(rows);
+      setStep('mapping');
+    } catch (error) {
+      console.error('File parse error:', error);
+      toast.error('Failed to parse file');
       setProcessing(false);
     }
   };
@@ -381,17 +416,17 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
                     {field.required && <span className="text-destructive ml-1">*</span>}
                   </label>
                   <Select
-                    value={mapping[field.key]?.toString() ?? ''}
+                    value={mapping[field.key]?.toString() ?? 'unmapped'}
                     onValueChange={(val) => setMapping(prev => ({ 
                       ...prev, 
-                      [field.key]: val === '' ? undefined : parseInt(val) 
+                      [field.key]: val === 'unmapped' ? undefined : parseInt(val) 
                     }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select column..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">-- Not Mapped --</SelectItem>
+                      <SelectItem value="unmapped">-- Not Mapped --</SelectItem>
                       {headers.map((h, i) => (
                         <SelectItem key={i} value={i.toString()}>{h}</SelectItem>
                       ))}

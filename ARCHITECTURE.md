@@ -250,9 +250,14 @@ ats-chd-tools/
 
 **Indexes**: Comprehensive indexes on foreign keys and sort fields for performance
 
-## External Integrations
+**External Integrations**
 
 **None** - This is a fully offline desktop application with no external APIs or services.
+
+**File System Strategy (Hybrid)**:
+- **Production (Windows)**: Uses Tauri FS/Dialog plugins for native OS integration.
+- **Development (Browser)**: Uses HTML5 File API and Mock DB adapter for rapid UI iteration.
+- **Detection**: Runtime check via `window.__TAURI_INTERNALS__`.
 
 **File System**:
 - Uses Tauri FS plugin for file read/write
@@ -318,13 +323,11 @@ ats-chd-tools/
 
 ```bash
 # Frontend only (for UI work)
+# NOW SUPPORTS: Browser Mode with Mock DB
 npm run dev
 
 # Full app (frontend + backend)
 npm run tauri:dev
-
-# Linting
-npm run lint
 ```
 
 ### Production Build

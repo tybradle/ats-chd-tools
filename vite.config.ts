@@ -16,6 +16,12 @@ export default defineConfig({
   server: {
     port: 1420,
     strictPort: true,
+    host: true,
+    hmr: {
+      host: "ui.tybrad.org", // Replace with your actual tunnel domain for HMR
+      protocol: "wss",
+      clientPort: 443,
+    },
     watch: {
       ignored: ["**/src-tauri/**"],
     },

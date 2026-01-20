@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Engineering Hub Landing Page V2</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#136dec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101822",
+                        "surface-dark": "#182029",
+                        "surface-darker": "#0d1218",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for that IDE feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d1218; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #282f39; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f4752; 
+        }
+        .blinking-cursor::after {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background-color: #136dec;
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display h-screen flex overflow-hidden selection:bg-primary/30 selection:text-white">
+<!-- Sidebar -->
+<aside class="w-64 flex-shrink-0 bg-surface-darker border-r border-white/5 flex flex-col justify-between z-20">
+<div>
+<!-- Branding -->
+<div class="h-16 flex items-center px-6 border-b border-white/5">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+</div>
+<div>
+<h1 class="text-white text-base font-bold leading-none">Eng Hub</h1>
+<p class="text-slate-500 text-xs font-normal mt-0.5">v2.0.0 internal</p>
+</div>
+</div>
+</div>
+<!-- Navigation -->
+<nav class="p-4 flex flex-col gap-2">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">construction</span>
+<span class="text-sm font-medium">Tools</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">menu_book</span>
+<span class="text-sm font-medium">API Docs</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">dns</span>
+<span class="text-sm font-medium">Infrastructure</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</nav>
+</div>
+<!-- User Profile Stub -->
+<div class="p-4 border-t border-white/5">
+<div class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
+<div class="w-8 h-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 border border-white/10" data-alt="User avatar gradient" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCmVCYIZsIHxXlHdxU1vmW-Z3ZZBnKGdNRAxcn0cS_kEf6vHqLxDJEc3HkzMfnQY9ccYKAS54u74eGNdiUQJOr9QtUmtucHq47xWhLKdmjZeJ4ieVXczlNbT6IiXfuv6Zwkz8Xmi8w9Adzly4OyNFElGWZYHXLSkkRR4EKWFby-HIAJVVNgKMLLtZ4u6lEpoSFrZ8LGABSNvmewbdORRLs_4DpQp3pZlAlFofbDkjwH7dw06Xx8jNcuMOeMJfOztbn6s3N9YctD_5Y');"></div>
+<div class="flex flex-col">
+<span class="text-sm font-medium text-white">Alex Dev</span>
+<span class="text-xs text-slate-500">Sr. Engineer</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<main class="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark relative">
+<!-- Header -->
+<header class="h-16 border-b border-white/5 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-10">
+<!-- Breadcrumbs -->
+<div class="flex items-center gap-2 text-sm">
+<a class="text-slate-500 hover:text-white transition-colors" href="#">Engineering</a>
+<span class="text-slate-700">/</span>
+<a class="text-slate-500 hover:text-white transition-colors" href="#">Hub</a>
+<span class="text-slate-700">/</span>
+<span class="text-white font-medium">Dashboard</span>
+</div>
+<!-- Search Bar -->
+<div class="flex items-center">
+<label class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-slate-500 text-[20px] group-focus-within:text-primary transition-colors">search</span>
+</div>
+<input class="bg-surface-dark border border-white/5 text-sm rounded-lg block w-64 pl-10 p-2 text-white placeholder-slate-500 focus:ring-1 focus:ring-primary focus:border-primary focus:outline-none transition-all" placeholder="Search tools..." type="text"/>
+<div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+<kbd class="inline-flex items-center border border-white/10 rounded px-1.5 text-[10px] font-mono text-slate-500">⌘K</kbd>
+</div>
+</label>
+</div>
+</header>
+<!-- Scrollable Content Area -->
+<div class="flex-1 overflow-y-auto p-6 md:p-8 space-y-8">
+<!-- Hero Section: Terminal Status -->
+<section class="@container">
+<div class="flex flex-col xl:flex-row gap-6">
+<!-- Terminal Widget -->
+<div class="flex-1 bg-[#1e1e1e] rounded-xl border border-white/10 shadow-xl overflow-hidden flex flex-col min-h-[300px]">
+<!-- Terminal Header -->
+<div class="h-10 bg-[#2d2d2d] flex items-center px-4 gap-2 border-b border-white/5">
+<div class="flex gap-1.5">
+<div class="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+<div class="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+<div class="w-3 h-3 rounded-full bg-[#27c93f]"></div>
+</div>
+<div class="flex-1 text-center text-xs text-slate-400 font-mono">system-status — -zsh</div>
+</div>
+<!-- Terminal Body -->
+<div class="p-6 font-mono text-sm text-slate-300 flex flex-col gap-2 bg-opacity-50" style="background-image: radial-gradient(#2d2d2d 1px, transparent 1px); background-size: 20px 20px;">
+<div class="flex gap-2">
+<span class="text-green-400">➜</span>
+<span class="text-blue-400">~</span>
+<span>./check_status.sh</span>
+</div>
+<div class="text-slate-400 pl-4 space-y-1">
+<p>&gt; Initializing environment variables... <span class="text-green-400">[OK]</span></p>
+<p>&gt; Connecting to internal gateway... <span class="text-green-400">[OK]</span></p>
+<p>&gt; Loading React 19 modules... <span class="text-green-400">[OK]</span></p>
+<p>&gt; Verifying Tauri 2.0 bindings... <span class="text-green-400">[OK]</span></p>
+<p>&gt; Checking TailwindCSS 4 JIT engine... <span class="text-green-400">[OK]</span></p>
+</div>
+<div class="flex gap-2 mt-2">
+<span class="text-green-400">➜</span>
+<span class="text-blue-400">~</span>
+<span class="blinking-cursor">All systems operational. Ready for input.</span>
+</div>
+</div>
+</div>
+<!-- Quick Actions / Welcome -->
+<div class="w-full xl:w-80 flex flex-col gap-4">
+<div class="bg-surface-dark border border-white/5 rounded-xl p-6 flex flex-col justify-between h-full bg-gradient-to-b from-surface-dark to-surface-darker">
+<div>
+<h2 class="text-xl font-bold text-white mb-2">Welcome Back, Alex</h2>
+<p class="text-slate-400 text-sm leading-relaxed">
+                                    You have <span class="text-white font-medium">3 pending pull requests</span> requiring review and <span class="text-white font-medium">1 failing build</span> in the CI pipeline.
+                                </p>
+</div>
+<div class="mt-6 flex flex-col gap-2">
+<button class="w-full bg-primary hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg text-sm flex items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+                                    Resume Session
+                                </button>
+<button class="w-full bg-white/5 hover:bg-white/10 text-slate-300 font-medium py-2 px-4 rounded-lg text-sm flex items-center justify-center gap-2 transition-all border border-white/5">
+<span class="material-symbols-outlined text-[18px]">bug_report</span>
+                                    Report Incident
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Core Infrastructure Section -->
+<section>
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-white text-xl font-bold tracking-tight">Core Infrastructure</h2>
+<button class="text-primary text-sm hover:underline">View Changelog</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Stack Item 1 -->
+<div class="group bg-surface-dark hover:bg-surface-dark/80 border border-white/5 hover:border-primary/30 rounded-xl p-5 transition-all cursor-pointer">
+<div class="flex items-start justify-between mb-3">
+<div class="w-10 h-10 rounded-lg bg-[#23272f] flex items-center justify-center border border-white/5">
+<span class="material-symbols-outlined text-blue-400">code</span>
+</div>
+<span class="px-2 py-1 rounded bg-blue-500/10 text-blue-400 text-xs font-medium border border-blue-500/10">v19.0.0-rc</span>
+</div>
+<h3 class="text-white font-bold mb-1 group-hover:text-primary transition-colors">React</h3>
+<p class="text-slate-400 text-sm">Library for web and native user interfaces.</p>
+</div>
+<!-- Stack Item 2 -->
+<div class="group bg-surface-dark hover:bg-surface-dark/80 border border-white/5 hover:border-primary/30 rounded-xl p-5 transition-all cursor-pointer">
+<div class="flex items-start justify-between mb-3">
+<div class="w-10 h-10 rounded-lg bg-[#23272f] flex items-center justify-center border border-white/5">
+<span class="material-symbols-outlined text-orange-400">app_shortcut</span>
+</div>
+<span class="px-2 py-1 rounded bg-orange-500/10 text-orange-400 text-xs font-medium border border-orange-500/10">v2.0.0</span>
+</div>
+<h3 class="text-white font-bold mb-1 group-hover:text-primary transition-colors">Tauri</h3>
+<p class="text-slate-400 text-sm">Build smaller, faster, and more secure desktop apps.</p>
+</div>
+<!-- Stack Item 3 -->
+<div class="group bg-surface-dark hover:bg-surface-dark/80 border border-white/5 hover:border-primary/30 rounded-xl p-5 transition-all cursor-pointer">
+<div class="flex items-start justify-between mb-3">
+<div class="w-10 h-10 rounded-lg bg-[#23272f] flex items-center justify-center border border-white/5">
+<span class="material-symbols-outlined text-cyan-400">style</span>
+</div>
+<span class="px-2 py-1 rounded bg-cyan-500/10 text-cyan-400 text-xs font-medium border border-cyan-500/10">v4.0.0</span>
+</div>
+<h3 class="text-white font-bold mb-1 group-hover:text-primary transition-colors">Tailwind CSS</h3>
+<p class="text-slate-400 text-sm">A utility-first CSS framework for rapid UI development.</p>
+</div>
+</div>
+</section>
+<!-- Available Tools Grid -->
+<section>
+<h2 class="text-white text-xl font-bold tracking-tight mb-4">Available Tools</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+<!-- Tool Card 1 -->
+<div class="bg-surface-dark border border-white/5 rounded-xl p-4 flex gap-4 hover:border-white/20 transition-all group">
+<div class="w-24 h-24 rounded-lg bg-cover bg-center flex-shrink-0 border border-white/5 overflow-hidden relative" data-alt="Abstract data visualization pattern" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCna7W0O6hBQZRoC2FIcGi7jq_T_2kgPf2AyVhzrk_Wb8CjrDnU4d_hndq9PW8WehLiHi9eJVc5AkiTJwe1jfdmpvSiJnHX6gjUDPgTtiF6DIoY5Yu0nkidmnIWoE9Cj8JqThE_XHzLHSJnrCBZkmd4XPzHwQndDNfajVUXZSQJNM0S8FeTqK-PEE-EQrFijPsWFAP90qlyX4lghBsl4t8ot3oK9hn5av9Q6CBMy1AnlHJCNSsjX1aW9b5L_grD5vyZM8Wb_vOIXBY');">
+<div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
+</div>
+<div class="flex flex-col flex-1 justify-between py-0.5">
+<div>
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-white font-semibold">Log Viewer</h3>
+<div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+</div>
+<p class="text-slate-400 text-xs leading-relaxed line-clamp-2">Real-time centralized logging for all microservices.</p>
+</div>
+<div class="flex items-center gap-2 mt-2">
+<button class="text-xs bg-white/5 hover:bg-primary hover:text-white text-slate-300 px-3 py-1.5 rounded transition-colors flex-1 text-center font-medium">Launch</button>
+<button class="text-slate-500 hover:text-white p-1.5 rounded hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined text-[18px]">star</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Tool Card 2 -->
+<div class="bg-surface-dark border border-white/5 rounded-xl p-4 flex gap-4 hover:border-white/20 transition-all group">
+<div class="w-24 h-24 rounded-lg bg-cover bg-center flex-shrink-0 border border-white/5 overflow-hidden relative" data-alt="Circuit board pattern" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC919d-x8xXeBhq2oLEw4YL2-j3gu2bHXlZYdkffCuCs3xr2VpiMfnzs4TnwNiJ8BExl4K_3yW-xGCgFyKcPVz0ipmvb9-UAejqSxbe6h8u09geYsmdxw5PtUyWbMZQzjuCJ2G_gg5LLSqtK-XVg7d_Z0x7chC6DoS2twk8xsARGCmlaz6P6bspzucJ9b7nE2VuUv3v9hrQClCMe0DOGiybN9QmjdYKwfTRd63lW6nXbcoix-WAkE144aqV03p7unSd1tDROW3imTc');">
+<div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
+</div>
+<div class="flex flex-col flex-1 justify-between py-0.5">
+<div>
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-white font-semibold">Feature Flags</h3>
+<div class="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]"></div>
+</div>
+<p class="text-slate-400 text-xs leading-relaxed line-clamp-2">Toggle features across environments instantly.</p>
+</div>
+<div class="flex items-center gap-2 mt-2">
+<button class="text-xs bg-white/5 hover:bg-primary hover:text-white text-slate-300 px-3 py-1.5 rounded transition-colors flex-1 text-center font-medium">Manage</button>
+<button class="text-slate-500 hover:text-white p-1.5 rounded hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined text-[18px]">star</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Tool Card 3 -->
+<div class="bg-surface-dark border border-white/5 rounded-xl p-4 flex gap-4 hover:border-white/20 transition-all group">
+<div class="w-24 h-24 rounded-lg bg-cover bg-center flex-shrink-0 border border-white/5 overflow-hidden relative" data-alt="Server database rack" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBabgJmV6iztY2iz1b8DNxI8GmBamna49UhWUv7jsXdxwPV3pyNWPkhp2_U34pkoHRS-lt1kJvMezQtxOmvGEKC5WcCF4F1ab2DlRqDx4wSgtsvGAQrcaEwGmD3odGagxotKH9ozIkPtZhEsnBYpdNTyc4W207I06ZVp5fwJhNTyVr0QbMTwn5s_ak1eT7JszusAiRv6tr2eYy2kTl9Rnxwk2WP5Y5Z-vvsz6b5dNM0pe7xkrxk0nj8U5Fc2qVdgJTCV7Z_u1Y7f58');">
+<div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
+</div>
+<div class="flex flex-col flex-1 justify-between py-0.5">
+<div>
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-white font-semibold">DB Explorer</h3>
+<div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+</div>
+<p class="text-slate-400 text-xs leading-relaxed line-clamp-2">Direct SQL access to staging and prod (read-only).</p>
+</div>
+<div class="flex items-center gap-2 mt-2">
+<button class="text-xs bg-white/5 hover:bg-primary hover:text-white text-slate-300 px-3 py-1.5 rounded transition-colors flex-1 text-center font-medium">Query</button>
+<button class="text-slate-500 hover:text-white p-1.5 rounded hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined text-[18px]">star</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Tool Card 4 -->
+<div class="bg-surface-dark border border-white/5 rounded-xl p-4 flex gap-4 hover:border-white/20 transition-all group">
+<div class="w-24 h-24 rounded-lg bg-cover bg-center flex-shrink-0 border border-white/5 overflow-hidden relative" data-alt="Blue digital mesh" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDqYYpzhKG-PC0ba583PRWKViBgGOYlrFvZnPGlIEIUY0e7Mn6aqA5jQGBTNDb8QoYPppX8v-TAJlcnfgQDIBPUbNuzBrXp6pfMmk3ArgyyA6pLh-LTjfFGF0KevYHE1wzD3phBeA6loozRv0-7Q1bPnSkuofzq6xkPyymJrDjY45s9wngAdkDzz4pMeOG-mdG0Xp6i8fnYAvs7V6U7eP97EV4A8ViCBS8oFCTxgrzEADWgHPrKG5XnkE5doazmPsNzxtvMF-ayKvg');">
+<div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
+</div>
+<div class="flex flex-col flex-1 justify-between py-0.5">
+<div>
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-white font-semibold">Graph Viewer</h3>
+<div class="w-2 h-2 rounded-full bg-slate-500"></div>
+</div>
+<p class="text-slate-400 text-xs leading-relaxed line-clamp-2">Visualize service dependencies and traces.</p>
+</div>
+<div class="flex items-center gap-2 mt-2">
+<button class="text-xs bg-white/5 hover:bg-primary hover:text-white text-slate-300 px-3 py-1.5 rounded transition-colors flex-1 text-center font-medium">View</button>
+<button class="text-slate-500 hover:text-white p-1.5 rounded hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined text-[18px]">star</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Add New Tool Card (Ghost) -->
+<div class="bg-transparent border border-dashed border-white/10 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:border-primary/50 hover:bg-white/5 transition-all cursor-pointer group h-full min-h-[140px]">
+<div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-white">add</span>
+</div>
+<span class="text-xs font-medium text-slate-500 group-hover:text-white transition-colors">Request New Tool</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Sticky Footer Status Bar -->
+<footer class="h-8 bg-[#0d1218] border-t border-white/5 flex items-center justify-between px-4 text-[11px] font-mono text-slate-500 select-none flex-shrink-0 z-20">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5 hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px]">wifi</span>
+<span>us-east-1</span>
+</div>
+<div class="flex items-center gap-1.5 hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px]">commit</span>
+<span>main (8a2f9c)</span>
+</div>
+<div class="flex items-center gap-1.5 hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px] text-green-500">check_circle</span>
+<span>Build Passing</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center gap-2">
+<span>CPU: 12%</span>
+<span class="w-px h-3 bg-white/10"></span>
+<span>MEM: 2.4GB</span>
+</div>
+<div class="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px]">notifications</span>
+<span>2 Alerts</span>
+</div>
+</div>
+</footer>
+</main>
+</body></html>

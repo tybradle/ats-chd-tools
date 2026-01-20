@@ -1,0 +1,33 @@
+On branch main
+Your branch is ahead of 'origin/main' by 4 commits.
+  (use "git push" to publish your local commits)
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   .prd/DECISIONS.md
+	modified:   AGENTS.md
+	modified:   ARCHITECTURE.md
+	modified:   package.json
+	modified:   src-tauri/Cargo.toml
+	modified:   src/components/bom/bom-table.tsx
+	modified:   src/components/bom/export-dialog.tsx
+	modified:   src/components/bom/import-dialog.tsx
+	modified:   src/components/bom/part-search-dialog.tsx
+	modified:   src/lib/db/client.ts
+	modified:   src/stores/bom-store.ts
+	modified:   vite.config.ts
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	.codenomad/
+	.dev-scripts/sync-to-windows.sh
+	.hive/
+	.opencode/agent/
+	.opencode/command/
+	.stitchUI/
+	USER-AGENTS.md
+	src/lib/db/mock-client.ts
+	src/lib/db/real-client.ts
+
+no changes added to commit (use "git add" and/or "git commit -a")

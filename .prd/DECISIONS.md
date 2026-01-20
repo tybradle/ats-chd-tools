@@ -85,3 +85,23 @@ This file is a human-readable mirror of the project memory database.
 
 ---
 
+### Implement DB Adapter Pattern for Browser Dev
+- **ID**: `e61b9d36-996d-4e5d-aac4-1cd556a50302`
+- **Date**: 2026-01-09
+- **Agent**: builder
+- **Rationale**: To enable browser-based UI development with hot-reload (HMR) without crashing on missing Rust/SQLite bindings. This separates 'real' SQLite logic from 'mock' in-memory logic, preventing test code from polluting production paths.
+- **File**: ARCHITECTURE.md
+- **Tags**: architecture, dev-experience, mocking
+
+---
+
+### Implement Hybrid File System Strategy for Dev Parity
+- **ID**: `62f922a7-4b14-4ca9-a343-ac51e28ed97e`
+- **Date**: 2026-01-09
+- **Agent**: builder
+- **Rationale**: To support the 'Browser Dev' workflow (ui.tybrad.org) without forking the codebase. We use runtime environment detection (`isTauri`) to transparently switch between native Tauri file dialogs (Production) and HTML file inputs/downloads (Dev/Browser). This allows the exact same React components to run in both environments without conditional compilation or risky branching.
+- **File**: ARCHITECTURE.md
+- **Tags**: architecture, hybrid-app, dev-environment
+
+---
+

@@ -1,0 +1,105 @@
+diff --git a/src/components/bom/bom-table.tsx b/src/components/bom/bom-table.tsx
+index bef2d7f..587ba50 100644
+--- a/src/components/bom/bom-table.tsx
++++ b/src/components/bom/bom-table.tsx
+@@ -16,11 +16,10 @@ import {
+ import { Input } from '@/components/ui/input';
+ import { Button } from '@/components/ui/button';
+ import { Checkbox } from '@/components/ui/checkbox';
+-import { Trash2, Copy, Search, Plus, FileUp, FileDown } from 'lucide-react';
++import { Trash2, Copy, Search, Plus, FileUp, FileDown, ChevronUp, ChevronDown } from 'lucide-react';
+ import { useBOMStore } from '@/stores/bom-store';
+ import type { BOMItem } from '@/types/bom';
+-import type { PartWithManufacturer } from '@/types/parts';
+-import { PartSearchDialog } from './part-search-dialog';
++import { PartSearchDialog, type SearchResult } from './part-search-dialog';
+ import { ImportDialog } from './import-dialog';
+ import { ExportDialog } from './export-dialog';
+ import { toast } from 'sonner';
+@@ -36,6 +35,7 @@ export function BomTable() {
+     deleteItem,
+     bulkDeleteItems,
+     duplicateItem,
++    moveItem,
+     createItem,
+     selectedItemIds,
+     setSelectedItemIds,
+@@ -130,6 +130,24 @@ export function BomTable() {
+       id: 'actions',
+       cell: ({ row }) => (
+         <div className="flex gap-1">
++          <Button 
++            variant="ghost" 
++            size="icon" 
++            className="h-8 w-8" 
++            onClick={() => moveItem(row.original.id, 'up')}
++            disabled={row.index === 0}
++          >
++            <ChevronUp className="h-4 w-4" />
++          </Button>
++          <Button 
++            variant="ghost" 
++            size="icon" 
++            className="h-8 w-8" 
++            onClick={() => moveItem(row.original.id, 'down')}
++            disabled={row.index === items.length - 1}
++          >
++            <ChevronDown className="h-4 w-4" />
++          </Button>
+           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => duplicateItem(row.original.id)}>
+             <Copy className="h-4 w-4" />
+           </Button>
+@@ -139,7 +157,7 @@ export function BomTable() {
+         </div>
+       ),
+     }),
+-  ], [updateItem, deleteItem, duplicateItem]);
++  ], [updateItem, deleteItem, duplicateItem, moveItem, items.length]);
+ 
+   const table = useReactTable({
+     data: items,
+@@ -163,7 +181,7 @@ export function BomTable() {
+     },
+   });
+ 
+-  const handlePartSelect = (part: PartWithManufacturer) => {
++  const handlePartSelect = (part: SearchResult) => {
+     if (!currentProject || !currentLocationId) return;
+     
+     createItem({
+@@ -175,10 +193,10 @@ export function BomTable() {
+       secondary_description: part.secondary_description,
+       quantity: 1,
+       unit: part.unit || 'EA',
+-      unit_price: null,
+-      manufacturer: part.manufacturer_name,
++      unit_price: part.unit_price || null,
++      manufacturer: part.manufacturer || '',
+       supplier: '',
+-      category: part.category_name || '',
++      category: '',
+       reference_designator: '',
+       is_spare: 0,
+       sort_order: items.length + 1,
+@@ -250,9 +268,10 @@ export function BomTable() {
+         </div>
+       </div>
+ 
+-      <div className="border rounded-md overflow-hidden">
+-        <Table>
+-          <TableHeader>
++      <div className="border rounded-md overflow-hidden flex flex-col max-h-[600px]">
++        <div className="overflow-auto">
++          <Table>
++            <TableHeader className="sticky top-0 bg-background z-10">
+             {table.getHeaderGroups().map((headerGroup) => (
+               <TableRow key={headerGroup.id}>
+                 {headerGroup.headers.map((header) => (
+@@ -282,6 +301,7 @@ export function BomTable() {
+             )}
+           </TableBody>
+         </Table>
++        </div>
+       </div>
+ 
+       <PartSearchDialog

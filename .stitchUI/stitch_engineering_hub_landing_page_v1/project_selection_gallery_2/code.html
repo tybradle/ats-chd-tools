@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Data-Centric Project Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#136dec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#09090b",
+                        "surface-dark": "#18181b",
+                        "border-dark": "#27272a",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"],
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+            ::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+            }
+            ::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #3f3f46;
+                border-radius: 10px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #52525b;
+            }
+        }
+    </style>
+</head>
+<body class="bg-background-dark text-slate-200 font-body overflow-hidden h-screen w-full flex">
+<aside class="w-64 h-full bg-zinc-950 border-r border-border-dark flex-col hidden md:flex shrink-0 z-20">
+<div class="p-6 flex items-center gap-3">
+<div class="bg-primary/20 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary text-2xl">precision_manufacturing</span>
+</div>
+<h1 class="text-white text-xl font-bold tracking-tight font-display">EngHub</h1>
+</div>
+<nav class="flex-1 px-4 py-2 flex flex-col gap-1 overflow-y-auto">
+<a class="flex items-center gap-3 px-3 py-2 rounded-md text-slate-400 hover:text-white hover:bg-zinc-900 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-md bg-zinc-900 text-primary border border-white/5" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">view_kanban</span>
+<span class="text-sm font-semibold">Projects</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-md text-slate-400 hover:text-white hover:bg-zinc-900 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px]">construction</span>
+<span class="text-sm font-medium">Tools</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-md text-slate-400 hover:text-white hover:bg-zinc-900 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px]">analytics</span>
+<span class="text-sm font-medium">Analytics</span>
+</a>
+</nav>
+<div class="p-4 border-t border-border-dark bg-zinc-950/50">
+<div class="flex items-center gap-3 px-3 py-2">
+<div class="size-8 rounded bg-zinc-800 border border-border-dark flex items-center justify-center text-xs font-bold text-white uppercase">JD</div>
+<div class="flex flex-col overflow-hidden">
+<span class="text-xs font-bold text-white truncate">John Doe</span>
+<span class="text-[10px] text-slate-500 truncate">Lead Systems Engineer</span>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col h-full relative overflow-hidden bg-background-dark">
+<header class="h-14 border-b border-border-dark bg-zinc-950/50 backdrop-blur-md sticky top-0 z-10 px-6 flex items-center justify-between shrink-0">
+<div class="flex items-center gap-4 flex-1">
+<h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Project Explorer</h2>
+</div>
+<div class="flex items-center gap-3 w-full max-w-2xl justify-end">
+<div class="relative w-full max-w-md hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-[18px]">search</span>
+<input class="w-full h-9 bg-zinc-900 border border-border-dark rounded-md pl-9 pr-4 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all" placeholder="Filter by Project ID, Name, or Customer..." type="text"/>
+</div>
+<button class="h-9 px-4 bg-primary hover:bg-primary/90 text-white text-xs font-bold rounded-md flex items-center gap-2 transition-colors whitespace-nowrap shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>NEW PROJECT</span>
+</button>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto">
+<div class="p-6 md:p-8 max-w-[1600px] mx-auto">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+<div>
+<h1 class="text-2xl font-bold text-white mb-1">Project Registry</h1>
+<p class="text-slate-500 text-sm">System database of all active engineering packages and customer engagements.</p>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex border border-border-dark rounded-md p-0.5 bg-zinc-900">
+<button class="px-3 py-1.5 rounded bg-zinc-800 text-white text-xs font-medium shadow-sm">
+<span class="material-symbols-outlined text-[16px] align-middle mr-1">view_list</span> List
+                        </button>
+<button class="px-3 py-1.5 rounded text-slate-500 hover:text-white text-xs font-medium">
+<span class="material-symbols-outlined text-[16px] align-middle mr-1">grid_view</span> Grid
+                        </button>
+</div>
+</div>
+</div>
+<div class="rounded-lg border border-border-dark bg-surface-dark overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-border-dark bg-zinc-900/50">
+<th class="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Project Number</th>
+<th class="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Package Name</th>
+<th class="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Customer</th>
+<th class="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Project Name</th>
+<th class="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Status</th>
+<th class="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Last Edited</th>
+<th class="px-4 py-3 text-right"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-dark">
+<tr class="hover:bg-zinc-800/50 transition-colors group cursor-pointer">
+<td class="px-4 py-4">
+<span class="font-mono text-primary font-semibold text-sm">PRJ-2024-00128</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-white text-sm font-medium">HVAC_RETROFIT_S7</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-400 text-sm">Industrial Dynamics Corp.</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-300 text-sm">Sector 7 Facility Upgrade</span>
+</td>
+<td class="px-4 py-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-tighter">In Progress</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-500 text-xs">2024-11-20 14:32</span>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="text-slate-600 hover:text-white"><span class="material-symbols-outlined text-[18px]">open_in_new</span></button>
+</td>
+</tr>
+<tr class="hover:bg-zinc-800/50 transition-colors group cursor-pointer">
+<td class="px-4 py-4">
+<span class="font-mono text-primary font-semibold text-sm">PRJ-2024-00094</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-white text-sm font-medium">STRUC_AUDIT_24</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-400 text-sm">Global Logistics Hub</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-300 text-sm">Q4 Structural Integrity Review</span>
+</td>
+<td class="px-4 py-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase tracking-tighter">Completed</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-500 text-xs">2024-11-19 09:15</span>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="text-slate-600 hover:text-white"><span class="material-symbols-outlined text-[18px]">open_in_new</span></button>
+</td>
+</tr>
+<tr class="hover:bg-zinc-800/50 transition-colors group cursor-pointer">
+<td class="px-4 py-4">
+<span class="font-mono text-primary font-semibold text-sm">PRJ-2024-00142</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-white text-sm font-medium">PIPE_EXP_ALPHA</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-400 text-sm">North Star Energy</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-300 text-sm">Alpha Pipeline Extension</span>
+</td>
+<td class="px-4 py-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-tighter">Review</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-500 text-xs">2024-11-20 16:55</span>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="text-slate-600 hover:text-white"><span class="material-symbols-outlined text-[18px]">open_in_new</span></button>
+</td>
+</tr>
+<tr class="hover:bg-zinc-800/50 transition-colors group cursor-pointer">
+<td class="px-4 py-4">
+<span class="font-mono text-primary font-semibold text-sm">PRJ-2024-00156</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-white text-sm font-medium">WH_LOGIC_V2</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-400 text-sm">Apex Fulfillment</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-300 text-sm">Warehouse Automation V2</span>
+</td>
+<td class="px-4 py-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20 uppercase tracking-tighter">Draft</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-500 text-xs">2024-11-20 17:01</span>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="text-slate-600 hover:text-white"><span class="material-symbols-outlined text-[18px]">open_in_new</span></button>
+</td>
+</tr>
+<tr class="hover:bg-zinc-800/50 transition-colors group cursor-pointer">
+<td class="px-4 py-4">
+<span class="font-mono text-primary font-semibold text-sm">PRJ-2024-00112</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-white text-sm font-medium">DC_COOLING_SYS</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-400 text-sm">Azure Cloud Services</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-300 text-sm">Data Center Liquid Cooling</span>
+</td>
+<td class="px-4 py-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-tighter">In Progress</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-500 text-xs">2024-11-17 11:20</span>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="text-slate-600 hover:text-white"><span class="material-symbols-outlined text-[18px]">open_in_new</span></button>
+</td>
+</tr>
+<tr class="hover:bg-zinc-800/50 transition-colors group cursor-pointer">
+<td class="px-4 py-4">
+<span class="font-mono text-primary font-semibold text-sm">PRJ-2024-00088</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-white text-sm font-medium">SOLAR_FIELD_B</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-400 text-sm">Renewable Prime</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-300 text-sm">Field B Panel Placement</span>
+</td>
+<td class="px-4 py-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase tracking-tighter">Completed</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-slate-500 text-xs">2024-11-10 08:00</span>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="text-slate-600 hover:text-white"><span class="material-symbols-outlined text-[18px]">open_in_new</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="px-4 py-3 bg-zinc-900/30 border-t border-border-dark flex items-center justify-between">
+<span class="text-[11px] text-slate-500 font-medium">Showing 6 of 128 Projects</span>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded hover:bg-zinc-800 text-slate-400 disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="p-1 rounded hover:bg-zinc-800 text-slate-400">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
+<div class="p-4 rounded-lg bg-surface-dark border border-border-dark">
+<div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Total Active</div>
+<div class="text-2xl font-bold text-white">42</div>
+</div>
+<div class="p-4 rounded-lg bg-surface-dark border border-border-dark">
+<div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">In Review</div>
+<div class="text-2xl font-bold text-blue-400">12</div>
+</div>
+<div class="p-4 rounded-lg bg-surface-dark border border-border-dark">
+<div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Pending Approval</div>
+<div class="text-2xl font-bold text-amber-500">5</div>
+</div>
+<div class="p-4 rounded-lg bg-surface-dark border border-border-dark">
+<div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Completed YTD</div>
+<div class="text-2xl font-bold text-emerald-500">86</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+
+</body></html>

@@ -1,0 +1,384 @@
+diff --git a/src/components/bom/bom-table.tsx b/src/components/bom/bom-table.tsx
+index bef2d7f..11220ad 100644
+--- a/src/components/bom/bom-table.tsx
++++ b/src/components/bom/bom-table.tsx
+@@ -6,25 +6,36 @@ import {
+   createColumnHelper,
+ } from '@tanstack/react-table';
+ import {
+-  Table,
+-  TableBody,
+-  TableCell,
+-  TableHead,
+-  TableHeader,
+-  TableRow,
+-} from '@/components/ui/table';
+-import { Input } from '@/components/ui/input';
++  DenseTable,
++  DenseTableBody,
++  DenseTableCell,
++  DenseTableHead,
++  DenseTableHeader,
++  DenseTableRow,
++} from '@/components/ui/dense-table';
++import { DenseInput } from '@/components/ui/dense-input';
+ import { Button } from '@/components/ui/button';
+ import { Checkbox } from '@/components/ui/checkbox';
+ import { Trash2, Copy, Search, Plus, FileUp, FileDown } from 'lucide-react';
+ import { useBOMStore } from '@/stores/bom-store';
+ import type { BOMItem } from '@/types/bom';
+-import type { PartWithManufacturer } from '@/types/parts';
++
+ import { PartSearchDialog } from './part-search-dialog';
+ import { ImportDialog } from './import-dialog';
+ import { ExportDialog } from './export-dialog';
+ import { toast } from 'sonner';
+ 
++interface SearchResult {
++  id: number;
++  part_number: string;
++  description: string;
++  secondary_description?: string | null;
++  manufacturer?: string;
++  unit?: string;
++  unit_price?: number;
++  category?: string;
++}
++
+ const columnHelper = createColumnHelper<BOMItem>();
+ 
+ export function BomTable() {
+@@ -68,61 +79,58 @@ export function BomTable() {
+     columnHelper.accessor('part_number', {
+       header: 'Part Number',
+       cell: ({ getValue, row }) => (
+-        <Input
++        <DenseInput
+           value={getValue()}
+           onChange={(e) => updateItem(row.original.id, { part_number: e.target.value })}
+-          className="h-8 font-mono"
++          className="font-mono"
+         />
+       ),
+     }),
+     columnHelper.accessor('manufacturer', {
+       header: 'Manufacturer',
+       cell: ({ getValue, row }) => (
+-        <Input
++        <DenseInput
+           value={getValue() || ''}
+           onChange={(e) => updateItem(row.original.id, { manufacturer: e.target.value })}
+-          className="h-8"
+         />
+       ),
+     }),
+     columnHelper.accessor('description', {
+       header: 'Description',
+       cell: ({ getValue, row }) => (
+-        <Input
++        <DenseInput
+           value={getValue()}
+           onChange={(e) => updateItem(row.original.id, { description: e.target.value })}
+-          className="h-8"
+         />
+       ),
+     }),
+     columnHelper.accessor('quantity', {
+       header: 'Qty',
+       cell: ({ getValue, row }) => (
+-        <Input
++        <DenseInput
+           type="number"
+           value={getValue()}
+           onChange={(e) => updateItem(row.original.id, { quantity: parseFloat(e.target.value) || 0 })}
+-          className="h-8 w-20"
++          className="w-20"
+         />
+       ),
+     }),
+     columnHelper.accessor('unit', {
+       header: 'Unit',
+       cell: ({ getValue, row }) => (
+-        <Input
++        <DenseInput
+           value={getValue()}
+           onChange={(e) => updateItem(row.original.id, { unit: e.target.value })}
+-          className="h-8 w-16"
++          className="w-16"
+         />
+       ),
+     }),
+     columnHelper.accessor('reference_designator', {
+       header: 'Ref Des',
+       cell: ({ getValue, row }) => (
+-        <Input
++        <DenseInput
+           value={getValue() || ''}
+           onChange={(e) => updateItem(row.original.id, { reference_designator: e.target.value })}
+-          className="h-8"
+         />
+       ),
+     }),
+@@ -163,7 +171,7 @@ export function BomTable() {
+     },
+   });
+ 
+-  const handlePartSelect = (part: PartWithManufacturer) => {
++  const handlePartSelect = (part: SearchResult) => {
+     if (!currentProject || !currentLocationId) return;
+     
+     createItem({
+@@ -172,13 +180,13 @@ export function BomTable() {
+       part_id: part.id,
+       part_number: part.part_number,
+       description: part.description,
+-      secondary_description: part.secondary_description,
++      secondary_description: part.secondary_description ?? null,
+       quantity: 1,
+       unit: part.unit || 'EA',
+-      unit_price: null,
+-      manufacturer: part.manufacturer_name,
++      unit_price: part.unit_price ?? null,
++      manufacturer: part.manufacturer || '',
+       supplier: '',
+-      category: part.category_name || '',
++      category: part.category || '',
+       reference_designator: '',
+       is_spare: 0,
+       sort_order: items.length + 1,
+@@ -250,39 +258,37 @@ export function BomTable() {
+         </div>
+       </div>
+ 
+-      <div className="border rounded-md overflow-hidden">
+-        <Table>
+-          <TableHeader>
+-            {table.getHeaderGroups().map((headerGroup) => (
+-              <TableRow key={headerGroup.id}>
+-                {headerGroup.headers.map((header) => (
+-                  <TableHead key={header.id}>
+-                    {flexRender(header.column.columnDef.header, header.getContext())}
+-                  </TableHead>
+-                ))}
+-              </TableRow>
+-            ))}
+-          </TableHeader>
+-          <TableBody>
+-            {table.getRowModel().rows.map((row) => (
+-              <TableRow key={row.id}>
+-                {row.getVisibleCells().map((cell) => (
+-                  <TableCell key={cell.id} className="p-1 px-2">
+-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+-                  </TableCell>
+-                ))}
+-              </TableRow>
+-            ))}
+-            {items.length === 0 && (
+-              <TableRow>
+-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+-                  No items in this location.
+-                </TableCell>
+-              </TableRow>
+-            )}
+-          </TableBody>
+-        </Table>
+-      </div>
++      <DenseTable>
++        <DenseTableHeader>
++          {table.getHeaderGroups().map((headerGroup) => (
++            <DenseTableRow key={headerGroup.id}>
++              {headerGroup.headers.map((header) => (
++                <DenseTableHead key={header.id}>
++                  {flexRender(header.column.columnDef.header, header.getContext())}
++                </DenseTableHead>
++              ))}
++            </DenseTableRow>
++          ))}
++        </DenseTableHeader>
++        <DenseTableBody>
++          {table.getRowModel().rows.map((row) => (
++            <DenseTableRow key={row.id}>
++              {row.getVisibleCells().map((cell) => (
++                <DenseTableCell key={cell.id}>
++                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
++                </DenseTableCell>
++              ))}
++            </DenseTableRow>
++          ))}
++          {items.length === 0 && (
++            <DenseTableRow>
++              <DenseTableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
++                No items in this location.
++              </DenseTableCell>
++            </DenseTableRow>
++          )}
++        </DenseTableBody>
++      </DenseTable>
+ 
+       <PartSearchDialog
+         open={isSearchOpen}
+diff --git a/src/components/bom/part-search-dialog.tsx b/src/components/bom/part-search-dialog.tsx
+index 7208942..f27fd8e 100644
+--- a/src/components/bom/part-search-dialog.tsx
++++ b/src/components/bom/part-search-dialog.tsx
+@@ -11,7 +11,7 @@ import { Search } from 'lucide-react';
+ import { query } from '@/lib/db/client';
+ import type { Part } from '@/types/parts';
+ 
+-interface SearchResult extends Part {
++export interface SearchResult extends Part {
+   manufacturer?: string;
+   unit_price?: number;
+ }
+diff --git a/src/components/ui/dense-input.tsx b/src/components/ui/dense-input.tsx
+new file mode 100644
+index 0000000..54cf7bd
+--- /dev/null
++++ b/src/components/ui/dense-input.tsx
+@@ -0,0 +1,20 @@
++import * as React from "react"
++
++import { cn } from "@/lib/utils"
++
++function DenseInput({ className, type, ...props }: React.ComponentProps<"input">) {
++  return (
++    <input
++      type={type}
++      data-slot="dense-input"
++      className={cn(
++        "w-full h-8 px-2 text-sm bg-input border border-border rounded transition-all focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-foreground placeholder:text-muted-foreground",
++        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
++        className
++      )}
++      {...props}
++    />
++  )
++}
++
++export { DenseInput }
+\ No newline at end of file
+diff --git a/src/components/ui/dense-table.tsx b/src/components/ui/dense-table.tsx
+new file mode 100644
+index 0000000..9621f3e
+--- /dev/null
++++ b/src/components/ui/dense-table.tsx
+@@ -0,0 +1,118 @@
++"use client"
++
++import * as React from "react"
++
++import { cn } from "@/lib/utils"
++
++function DenseTable({ className, ...props }: React.ComponentProps<"table">) {
++  return (
++    <div
++      data-slot="dense-table-container"
++      className={cn("border rounded-md overflow-hidden flex flex-col max-h-[600px]", className)}
++    >
++      <div className="overflow-auto">
++        <table
++          data-slot="dense-table"
++          className="w-full caption-bottom text-sm"
++          {...props}
++        />
++      </div>
++    </div>
++  )
++}
++
++function DenseTableHeader({ className, ...props }: React.ComponentProps<"thead">) {
++  return (
++    <thead
++      data-slot="dense-table-header"
++      className={cn("[&_tr]:border-b sticky top-0 bg-background z-10", className)}
++      {...props}
++    />
++  )
++}
++
++function DenseTableBody({ className, ...props }: React.ComponentProps<"tbody">) {
++  return (
++    <tbody
++      data-slot="dense-table-body"
++      className={cn("[&_tr:last-child]:border-0", className)}
++      {...props}
++    />
++  )
++}
++
++function DenseTableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
++  return (
++    <tfoot
++      data-slot="dense-table-footer"
++      className={cn(
++        "bg-muted/50 border-t font-medium [&>tr]:last:border-b-0",
++        className
++      )}
++      {...props}
++    />
++  )
++}
++
++function DenseTableRow({ className, ...props }: React.ComponentProps<"tr">) {
++  return (
++    <tr
++      data-slot="dense-table-row"
++      className={cn(
++        "hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
++        className
++      )}
++      {...props}
++    />
++  )
++}
++
++function DenseTableHead({ className, ...props }: React.ComponentProps<"th">) {
++  return (
++    <th
++      data-slot="dense-table-head"
++      className={cn(
++        "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
++        className
++      )}
++      {...props}
++    />
++  )
++}
++
++function DenseTableCell({ className, ...props }: React.ComponentProps<"td">) {
++  return (
++    <td
++      data-slot="dense-table-cell"
++      className={cn(
++        "p-1 px-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
++        className
++      )}
++      {...props}
++    />
++  )
++}
++
++function DenseTableCaption({
++  className,
++  ...props
++}: React.ComponentProps<"caption">) {
++  return (
++    <caption
++      data-slot="dense-table-caption"
++      className={cn("text-muted-foreground mt-4 text-sm", className)}
++      {...props}
++    />
++  )
++}
++
++export {
++  DenseTable,
++  DenseTableHeader,
++  DenseTableBody,
++  DenseTableFooter,
++  DenseTableHead,
++  DenseTableRow,
++  DenseTableCell,
++  DenseTableCaption,
++}
+\ No newline at end of file

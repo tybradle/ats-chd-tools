@@ -1,6 +1,10 @@
 name: Build Windows Installer
 
 on:
+  # Trigger on push to main
+  push:
+    branches: [ "main" ]
+
   # Manual trigger from GitHub UI
   workflow_dispatch:
     inputs:

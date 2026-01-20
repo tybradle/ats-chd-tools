@@ -1,0 +1,2 @@
+On branch hive/stitch-ui-remediation/03-refactor-bom-table
+nothing to commit, working tree clean

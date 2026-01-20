@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BOM Management with Import BOM Action</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0f172a",
+                        "border": "#e2e8f0",
+                        "input": "#f8fafc",
+                        "ring": "#94a3b8",
+                        "background": "#ffffff",
+                        "foreground": "#0f172a",
+                        "muted": "#64748b",
+                        "muted-foreground": "#94a3b8",
+                        "accent": "#f1f5f9",
+                        "destructive": "#ef4444",
+                    },
+                    fontFamily: {
+                        "sans": ["Inter", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+            body {
+                @apply bg-background text-foreground font-sans antialiased;
+            }
+        }
+        .spreadsheet-input {
+            @apply w-full h-8 px-2 text-sm bg-white border border-border rounded transition-all focus:outline-none focus:ring-1 focus:ring-ring focus:border-slate-400;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+<header class="p-6 border-b border-border bg-white flex flex-col gap-2 shrink-0">
+<div class="flex items-center gap-2">
+<a class="flex items-center gap-1 text-sm text-muted hover:text-foreground transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                Back to Projects
+            </a>
+</div>
+<div class="flex flex-col">
+<h1 class="text-2xl font-bold tracking-tight">BOM Management</h1>
+<p class="text-sm text-muted">Trial: 80 Items</p>
+</div>
+</header>
+<div class="flex items-center justify-between border-b border-border bg-white shrink-0">
+<div class="flex items-end">
+<div class="px-6 py-3 border-b-2 border-primary text-sm font-semibold text-primary cursor-default flex items-center gap-2 bg-accent/50">
+                EC2 <span class="text-[10px] text-muted-foreground font-normal">(80) [MAIN]</span>
+</div>
+<div class="px-6 py-3 border-b-2 border-transparent text-sm font-medium text-muted hover:text-foreground hover:bg-accent/30 cursor-pointer flex items-center gap-2 transition-all">
+                EC3 <span class="text-[10px] text-muted-foreground font-normal">(0)</span>
+</div>
+<div class="px-6 py-3 border-b-2 border-transparent text-sm font-medium text-muted hover:text-foreground hover:bg-accent/30 cursor-pointer flex items-center gap-2 transition-all">
+                EC4 <span class="text-[10px] text-muted-foreground font-normal">(0)</span>
+</div>
+</div>
+<button class="mr-6 flex items-center gap-2 px-3 py-1.5 text-sm font-medium border border-border rounded-md hover:bg-accent transition-colors">
+<span class="material-symbols-outlined text-[18px]">add</span>
+            Add Location
+        </button>
+</div>
+<div class="p-4 flex items-center justify-between bg-white border-b border-border shrink-0">
+<div class="flex items-center gap-2">
+<button class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined text-[18px]">search</span>
+                Add from Catalog
+            </button>
+<button class="flex items-center gap-2 px-4 py-2 border border-border rounded-md text-sm font-medium hover:bg-accent transition-colors">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                Add Manual
+            </button>
+<button class="flex items-center gap-2 px-4 py-2 border border-border rounded-md text-sm font-medium hover:bg-accent transition-colors">
+<span class="material-symbols-outlined text-[18px]">file_upload</span>
+                Import BOM
+            </button>
+</div>
+<button class="flex items-center gap-2 px-4 py-2 border border-border rounded-md text-sm font-medium hover:bg-accent transition-colors">
+<span class="material-symbols-outlined text-[18px]">file_download</span>
+            Export
+        </button>
+</div>
+<div class="flex-1 overflow-auto bg-slate-50">
+<table class="w-full border-separate border-spacing-0 min-w-[1200px]">
+<thead class="sticky top-0 z-10 bg-white">
+<tr class="text-left text-xs font-semibold text-muted uppercase tracking-wider">
+<th class="w-12 p-4 border-b border-border"><input class="rounded border-border text-primary focus:ring-primary" type="checkbox"/></th>
+<th class="px-4 py-3 border-b border-border">Part Number</th>
+<th class="px-4 py-3 border-b border-border">Manufacturer</th>
+<th class="px-4 py-3 border-b border-border w-[35%]">Description</th>
+<th class="px-4 py-3 border-b border-border w-24">Qty</th>
+<th class="px-4 py-3 border-b border-border w-20">Unit</th>
+<th class="px-4 py-3 border-b border-border w-40">Ref Des</th>
+<th class="px-4 py-3 border-b border-border text-right w-40">Actions</th>
+</tr>
+</thead>
+<tbody class="bg-white">
+<tr class="hover:bg-accent/40 transition-colors group">
+<td class="p-4 border-b border-slate-100"><input class="rounded border-border text-primary focus:ring-primary" type="checkbox"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input" type="text" value="RES-10K-0603-1"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input" type="text" value="Yageo"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input" type="text" value="Resistor 10K 1/10W 1% 0603"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input text-center" type="text" value="4"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input text-center" type="text" value="EA"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input" type="text" value="R1, R2, R3, R4"/></td>
+<td class="px-4 py-2 border-b border-slate-100">
+<div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1 hover:bg-white rounded text-muted hover:text-foreground"><span class="material-symbols-outlined text-[18px]">expand_less</span></button>
+<button class="p-1 hover:bg-white rounded text-muted hover:text-foreground"><span class="material-symbols-outlined text-[18px]">expand_more</span></button>
+<button class="p-1 hover:bg-white rounded text-muted hover:text-foreground"><span class="material-symbols-outlined text-[18px]">content_copy</span></button>
+<button class="p-1 hover:bg-red-50 rounded text-destructive"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-accent/40 transition-colors group">
+<td class="p-4 border-b border-slate-100"><input class="rounded border-border text-primary focus:ring-primary" type="checkbox"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input" type="text" value="CAP-10UF-0805-2"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input" type="text" value="Murata"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input" type="text" value="Capacitor 10uF 16V X7R 0805"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input text-center" type="text" value="2"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input text-center" type="text" value="EA"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input" type="text" value="C2, C3"/></td>
+<td class="px-4 py-2 border-b border-slate-100">
+<div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1 hover:bg-white rounded text-muted hover:text-foreground"><span class="material-symbols-outlined text-[18px]">expand_less</span></button>
+<button class="p-1 hover:bg-white rounded text-muted hover:text-foreground"><span class="material-symbols-outlined text-[18px]">expand_more</span></button>
+<button class="p-1 hover:bg-white rounded text-muted hover:text-foreground"><span class="material-symbols-outlined text-[18px]">content_copy</span></button>
+<button class="p-1 hover:bg-red-50 rounded text-destructive"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-accent/40 transition-colors group">
+<td class="p-4 border-b border-slate-100"><input class="rounded border-border text-primary focus:ring-primary" type="checkbox"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input" type="text" value="IC-STM32F103-3"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input" type="text" value="STMicroelectronics"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input" type="text" value="MCU ARM Cortex-M3 72MHz 64KB"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input text-center" type="text" value="1"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input text-center" type="text" value="EA"/></td>
+<td class="px-4 py-2 border-b border-slate-100"><input class="spreadsheet-input" type="text" value="U3"/></td>
+<td class="px-4 py-2 border-b border-slate-100">
+<div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1 hover:bg-white rounded text-muted hover:text-foreground"><span class="material-symbols-outlined text-[18px]">expand_less</span></button>
+<button class="p-1 hover:bg-white rounded text-muted hover:text-foreground"><span class="material-symbols-outlined text-[18px]">expand_more</span></button>
+<button class="p-1 hover:bg-white rounded text-muted hover:text-foreground"><span class="material-symbols-outlined text-[18px]">content_copy</span></button>
+<button class="p-1 hover:bg-red-50 rounded text-destructive"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+</div>
+</td>
+</tr>
+<script>
+                    const row = `
+                    <tr class="hover:bg-accent/40 transition-colors group">
+                        <td class="p-4 border-b border-slate-100"><input type="checkbox" class="rounded border-border text-primary focus:ring-primary"></td>
+                        <td class="px-4 py-2 border-b border-slate-100"><input type="text" class="spreadsheet-input"></td>
+                        <td class="px-4 py-2 border-b border-slate-100"><input type="text" class="spreadsheet-input"></td>
+                        <td class="px-4 py-2 border-b border-slate-100"><input type="text" class="spreadsheet-input"></td>
+                        <td class="px-4 py-2 border-b border-slate-100"><input type="text" class="spreadsheet-input text-center"></td>
+                        <td class="px-4 py-2 border-b border-slate-100"><input type="text" class="spreadsheet-input text-center"></td>
+                        <td class="px-4 py-2 border-b border-slate-100"><input type="text" class="spreadsheet-input"></td>
+                        <td class="px-4 py-2 border-b border-slate-100">
+                            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button class="p-1 hover:bg-white rounded text-muted hover:text-foreground"><span class="material-symbols-outlined text-[18px]">expand_less</span></button>
+                                <button class="p-1 hover:bg-white rounded text-muted hover:text-foreground"><span class="material-symbols-outlined text-[18px]">expand_more</span></button>
+                                <button class="p-1 hover:bg-white rounded text-muted hover:text-foreground"><span class="material-symbols-outlined text-[18px]">content_copy</span></button>
+                                <button class="p-1 hover:bg-red-50 rounded text-destructive"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+                            </div>
+                        </td>
+                    </tr>`;
+                    for(let i=0; i<15; i++) document.write(row);
+                </script>
+</tbody>
+</table>
+</div>
+<footer class="h-10 bg-white border-t border-border flex items-center justify-between px-6 text-xs font-medium text-muted shrink-0">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5 text-green-600">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+                Sync to SQLite Active
+            </div>
+<div class="h-3 w-px bg-border"></div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+                All changes saved locally
+            </div>
+</div>
+<div class="flex items-center gap-4">
+<span>Location: EC2</span>
+<span>Items: 80 / 1,000</span>
+<span class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[14px]">info</span>
+                Desktop Version 2.4.0
+            </span>
+</div>
+</footer>
+
+</body></html>

@@ -1,0 +1,7 @@
+src/pages:
+bom-project.tsx
+bom.tsx
+glenair.tsx
+home.tsx
+parts.tsx
+settings.tsx

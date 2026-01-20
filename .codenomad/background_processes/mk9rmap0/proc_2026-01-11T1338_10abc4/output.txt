@@ -1,0 +1,4 @@
+Merge made by the 'ort' strategy.
+ src/components/bom/bom-table.tsx          | 124 ++++++++++++++++--------------
+ src/components/bom/part-search-dialog.tsx |   2 +-
+ 2 files changed, 66 insertions(+), 60 deletions(-)

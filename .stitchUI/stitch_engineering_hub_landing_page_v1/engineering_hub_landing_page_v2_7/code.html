@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tools Centralization Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#136dec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101822",
+                        "surface-dark": "#182029",
+                        "surface-darker": "#0d1218",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d1218; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #282f39; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f4752; 
+        }
+        .blinking-cursor::after {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background-color: #136dec;
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display h-screen flex overflow-hidden selection:bg-primary/30 selection:text-white">
+<aside class="w-64 flex-shrink-0 bg-surface-darker border-r border-white/5 flex flex-col justify-between z-20">
+<div>
+<div class="h-16 flex items-center px-6 border-b border-white/5">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[20px]">grid_view</span>
+</div>
+<div>
+<h1 class="text-white text-base font-bold leading-none">ToolHub</h1>
+<p class="text-slate-500 text-xs font-normal mt-0.5">Centralization v2.1</p>
+</div>
+</div>
+</div>
+<nav class="p-4 flex flex-col gap-2">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">construction</span>
+<span class="text-sm font-medium">Toolsets</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">database</span>
+<span class="text-sm font-medium">Database Tools</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">admin_panel_settings</span>
+<span class="text-sm font-medium">Admin</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</nav>
+</div>
+<div class="p-4 border-t border-white/5">
+<div class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
+<div class="w-8 h-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 border border-white/10" data-alt="User avatar gradient" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCmVCYIZsIHxXlHdxU1vmW-Z3ZZBnKGdNRAxcn0cS_kEf6vHqLxDJEc3HkzMfnQY9ccYKAS54u74eGNdiUQJOr9QtUmtucHq47xWhLKdmjZeJ4ieVXczlNbT6IiXfuv6Zwkz8Xmi8w9Adzly4OyNFElGWZYHXLSkkRR4EKWFby-HIAJVVNgKMLLtZ4u6lEpoSFrZ8LGABSNvmewbdORRLs_4DpQp3pZlAlFofbDkjwH7dw06Xx8jNcuMOeMJfOztbn6s3N9YctD_5Y');"></div>
+<div class="flex flex-col">
+<span class="text-sm font-medium text-white">Alex Dev</span>
+<span class="text-xs text-slate-500">Sr. Engineer</span>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark relative">
+<header class="h-16 border-b border-white/5 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-10">
+<div class="flex items-center gap-2 text-sm">
+<a class="text-slate-500 hover:text-white transition-colors" href="#">Engineering</a>
+<span class="text-slate-700">/</span>
+<span class="text-white font-medium">Tools Centralization</span>
+</div>
+<div class="flex items-center gap-4">
+<label class="relative group hidden md:block">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-slate-500 text-[20px] group-focus-within:text-primary transition-colors">search</span>
+</div>
+<input class="bg-surface-dark border border-white/5 text-sm rounded-lg block w-64 pl-10 p-2 text-white placeholder-slate-500 focus:ring-1 focus:ring-primary focus:border-primary focus:outline-none transition-all" placeholder="Search migrated tools..." type="text"/>
+<div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+<kbd class="inline-flex items-center border border-white/10 rounded px-1.5 text-[10px] font-mono text-slate-500">⌘K</kbd>
+</div>
+</label>
+<button class="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-95">
+<span class="material-symbols-outlined text-[20px]">upload_file</span>
+<span>Import New Workbook</span>
+</button>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto p-6 md:p-8 space-y-8">
+<section class="@container">
+<div class="flex flex-col xl:flex-row gap-6">
+<div class="flex-1 bg-[#1e1e1e] rounded-xl border border-white/10 shadow-xl overflow-hidden flex flex-col min-h-[300px]">
+<div class="h-10 bg-[#2d2d2d] flex items-center px-4 gap-2 border-b border-white/5">
+<div class="flex gap-1.5">
+<div class="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+<div class="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+<div class="w-3 h-3 rounded-full bg-[#27c93f]"></div>
+</div>
+<div class="flex-1 text-center text-xs text-slate-400 font-mono">migration-worker — node</div>
+</div>
+<div class="p-6 font-mono text-sm text-slate-300 flex flex-col gap-2 bg-opacity-50" style="background-image: radial-gradient(#2d2d2d 1px, transparent 1px); background-size: 20px 20px;">
+<div class="flex gap-2">
+<span class="text-green-400">➜</span>
+<span class="text-blue-400">~</span>
+<span>task migrate --source="Mechanical_Loads_v4.xlsx"</span>
+</div>
+<div class="text-slate-400 pl-4 space-y-1">
+<p>&gt; Reading workbook schema... <span class="text-green-400">[OK]</span></p>
+<p>&gt; Detected 4 calculation sheets... <span class="text-green-400">[OK]</span></p>
+<p>&gt; Converting VBA macros to TypeScript... <span class="text-yellow-400">[WARN: 2 Review Needed]</span></p>
+<p>&gt; Generating UI components... <span class="text-green-400">[OK]</span></p>
+<p>&gt; Validating against existing toolsets... <span class="text-green-400">[OK]</span></p>
+</div>
+<div class="flex gap-2 mt-2">
+<span class="text-green-400">➜</span>
+<span class="text-blue-400">~</span>
+<span class="blinking-cursor">Waiting for approval to deploy...</span>
+</div>
+</div>
+</div>
+<div class="w-full xl:w-96 flex flex-col gap-4">
+<div class="bg-surface-dark border border-white/5 rounded-xl flex flex-col h-full overflow-hidden">
+<div class="p-4 border-b border-white/5 bg-surface-darker/50 flex justify-between items-center">
+<h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined text-base text-primary">history</span>
+                                    Recent Activity
+                                </h2>
+<button class="text-xs text-slate-500 hover:text-white">View All</button>
+</div>
+<div class="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
+<div class="flex gap-3">
+<div class="mt-1 w-2 h-2 rounded-full bg-green-500 flex-shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+<div>
+<p class="text-sm text-slate-300">
+<span class="font-medium text-white">Load Calculator</span> was successfully migrated to production.
+                                        </p>
+<p class="text-xs text-slate-500 mt-1">2 hours ago</p>
+</div>
+</div>
+<div class="flex gap-3">
+<div class="mt-1 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></div>
+<div>
+<p class="text-sm text-slate-300">
+<span class="font-medium text-white">Sarah Jenkins</span> started importing "Inventory_Q3.xlsx".
+                                        </p>
+<p class="text-xs text-slate-500 mt-1">4 hours ago</p>
+</div>
+</div>
+<div class="flex gap-3">
+<div class="mt-1 w-2 h-2 rounded-full bg-orange-500 flex-shrink-0"></div>
+<div>
+<p class="text-sm text-slate-300">
+                                            Legacy tool <span class="font-medium text-white">Stress Analysis</span> flagged for update.
+                                        </p>
+<p class="text-xs text-slate-500 mt-1">Yesterday</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section>
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-white text-xl font-bold tracking-tight flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">deployed_code</span>
+                        Migrated Tools
+                    </h2>
+<div class="flex gap-2 text-sm">
+<span class="px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/10">12 Active</span>
+<span class="px-2 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/10">3 Legacy</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+<div class="bg-surface-dark border border-white/5 rounded-xl p-5 hover:border-primary/40 transition-all group flex flex-col justify-between h-full">
+<div>
+<div class="flex items-center justify-between mb-3">
+<div class="w-10 h-10 rounded-lg bg-blue-900/30 flex items-center justify-center border border-blue-500/20 text-blue-400">
+<span class="material-symbols-outlined">calculate</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 text-[10px] font-bold uppercase tracking-wide border border-green-500/10">Active</span>
+</div>
+<h3 class="text-white font-bold mb-1 group-hover:text-primary transition-colors">Load Calculator</h3>
+<p class="text-slate-400 text-xs leading-relaxed line-clamp-2 mb-4">Standardized structural load calculations replaced 'Struct_Master_v2.xlsx'.</p>
+</div>
+<div class="pt-4 border-t border-white/5 flex items-center justify-between mt-auto">
+<span class="text-[10px] text-slate-500 font-mono">v2.4.0</span>
+<button class="text-xs bg-primary text-white hover:bg-blue-600 px-3 py-1.5 rounded transition-colors font-medium flex items-center gap-1">
+                                Launch
+                                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="bg-surface-dark border border-white/5 rounded-xl p-5 hover:border-primary/40 transition-all group flex flex-col justify-between h-full">
+<div>
+<div class="flex items-center justify-between mb-3">
+<div class="w-10 h-10 rounded-lg bg-purple-900/30 flex items-center justify-center border border-purple-500/20 text-purple-400">
+<span class="material-symbols-outlined">inventory_2</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 text-[10px] font-bold uppercase tracking-wide border border-green-500/10">Active</span>
+</div>
+<h3 class="text-white font-bold mb-1 group-hover:text-primary transition-colors">Material Inventory</h3>
+<p class="text-slate-400 text-xs leading-relaxed line-clamp-2 mb-4">Real-time tracking of raw materials and vendor stock levels.</p>
+</div>
+<div class="pt-4 border-t border-white/5 flex items-center justify-between mt-auto">
+<span class="text-[10px] text-slate-500 font-mono">v1.1.2</span>
+<button class="text-xs bg-primary text-white hover:bg-blue-600 px-3 py-1.5 rounded transition-colors font-medium flex items-center gap-1">
+                                Launch
+                                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="bg-surface-dark border border-white/5 rounded-xl p-5 hover:border-primary/40 transition-all group flex flex-col justify-between h-full">
+<div>
+<div class="flex items-center justify-between mb-3">
+<div class="w-10 h-10 rounded-lg bg-orange-900/30 flex items-center justify-center border border-orange-500/20 text-orange-400">
+<span class="material-symbols-outlined">compress</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 text-[10px] font-bold uppercase tracking-wide border border-orange-500/10">Legacy</span>
+</div>
+<h3 class="text-white font-bold mb-1 group-hover:text-primary transition-colors">Stress Analysis</h3>
+<p class="text-slate-400 text-xs leading-relaxed line-clamp-2 mb-4">Finite element analysis pre-processor. Migration scheduled for Q3.</p>
+</div>
+<div class="pt-4 border-t border-white/5 flex items-center justify-between mt-auto">
+<span class="text-[10px] text-slate-500 font-mono">v0.9.beta</span>
+<button class="text-xs bg-surface-darker hover:bg-white/10 text-white border border-white/10 px-3 py-1.5 rounded transition-colors font-medium flex items-center gap-1">
+                                Open (Old)
+                                <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+</button>
+</div>
+</div>
+<div class="bg-surface-dark border border-white/5 rounded-xl p-5 hover:border-primary/40 transition-all group flex flex-col justify-between h-full">
+<div>
+<div class="flex items-center justify-between mb-3">
+<div class="w-10 h-10 rounded-lg bg-cyan-900/30 flex items-center justify-center border border-cyan-500/20 text-cyan-400">
+<span class="material-symbols-outlined">thermostat</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 text-[10px] font-bold uppercase tracking-wide border border-green-500/10">Active</span>
+</div>
+<h3 class="text-white font-bold mb-1 group-hover:text-primary transition-colors">Thermal Dynamics</h3>
+<p class="text-slate-400 text-xs leading-relaxed line-clamp-2 mb-4">Heat transfer simulation tool for engine components.</p>
+</div>
+<div class="pt-4 border-t border-white/5 flex items-center justify-between mt-auto">
+<span class="text-[10px] text-slate-500 font-mono">v3.0.1</span>
+<button class="text-xs bg-primary text-white hover:bg-blue-600 px-3 py-1.5 rounded transition-colors font-medium flex items-center gap-1">
+                                Launch
+                                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<footer class="h-8 bg-[#0d1218] border-t border-white/5 flex items-center justify-between px-4 text-[11px] font-mono text-slate-500 select-none flex-shrink-0 z-20">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5 hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px]">wifi</span>
+<span>us-east-1</span>
+</div>
+<div class="flex items-center gap-1.5 hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px]">database</span>
+<span>DB: Connected</span>
+</div>
+<div class="flex items-center gap-1.5 hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px] text-green-500">check_circle</span>
+<span>All Systems Operational</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center gap-2">
+<span>Active Sessions: 42</span>
+<span class="w-px h-3 bg-white/10"></span>
+<span>Migration Queue: 0</span>
+</div>
+<div class="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px]">notifications</span>
+<span>1 Alert</span>
+</div>
+</div>
+</footer>
+</main>
+
+</body></html>

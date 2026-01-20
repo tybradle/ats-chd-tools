@@ -16,6 +16,7 @@ import { generateEplanXML, generateCSV, generateJSON, generateZW1Header } from '
 import { useBOMStore } from '@/stores/bom-store';
 import { toast } from 'sonner';
 import { FileDown, FileText, FileCode, FileJson } from 'lucide-react';
+import { isTauri } from '@/lib/db/client';
 
 interface ExportDialogProps {
   open: boolean;
@@ -68,6 +69,32 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
       const defaultFilename = `${currentProject.project_number}_${currentProject.package_name}_BOM.${ext}`;
       
+      // Browser Download Fallback
+      if (!isTauri) {
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = defaultFilename;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        if (format === 'XML' && includeZW1) {
+          const zw1Content = generateZW1Header(currentProject.project_number);
+          const zw1Blob = new Blob([zw1Content], { type: 'text/plain;charset=utf-8' });
+          const zw1Url = URL.createObjectURL(zw1Blob);
+          const zw1A = document.createElement('a');
+          zw1A.href = zw1Url;
+          zw1A.download = defaultFilename.replace(/\.xml$/i, '.zw1');
+          zw1A.click();
+          URL.revokeObjectURL(zw1Url);
+        }
+        
+        toast.success(`Downloaded ${defaultFilename}`);
+        onOpenChange(false);
+        return;
+      }
+
       const path = await save({
         defaultPath: defaultFilename,
         filters: [{ name: filterName, extensions: [ext] }]
