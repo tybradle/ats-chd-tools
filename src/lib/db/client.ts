@@ -29,6 +29,8 @@ export const categories = isTauri ? RealClient.categories : MockClient.categorie
 export const parts = isTauri ? RealClient.parts : MockClient.parts;
 export const settings = isTauri ? RealClient.settings : MockClient.settings;
 
+export const bomJobProjects = isTauri ? RealClient.bomJobProjects : MockClient.bomJobProjects;
+export const bomPackages = isTauri ? RealClient.bomPackages : MockClient.bomPackages;
 export const bomProjects = isTauri ? RealClient.bomProjects : MockClient.bomProjects;
 export const bomLocations = isTauri ? RealClient.bomLocations : MockClient.bomLocations;
 export const bomItems = isTauri ? RealClient.bomItems : MockClient.bomItems;

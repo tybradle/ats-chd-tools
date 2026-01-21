@@ -5,7 +5,33 @@
 // Export formats supported
 export type ExportFormat = 'EPLAN' | 'XML' | 'JSON' | 'CSV' | 'EXCEL';
 
-// BOM Projects
+// Job Projects (job #)
+export interface BOMJobProject {
+  id: number;
+  project_number: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Packages (scoped to Job Projects)
+export interface BOMPackage {
+  id: number;
+  project_id: number;
+  package_name: string;
+  name: string | null;
+  description: string | null;
+  version: string;
+  metadata: string | null;  // JSON string
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BOMPackageWithCounts extends BOMPackage {
+  location_count: number;
+  item_count: number;
+}
+
+// Legacy: BOMProject (deprecated - use BOMPackage)
 export interface BOMProject {
   id: number;
   project_number: string;

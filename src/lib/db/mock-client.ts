@@ -8,7 +8,8 @@ const STORAGE_KEY = 'ats_mock_db_v1';
 
 // Initial Seed Data
 const seedData = {
-  projects: [] as any[],
+  jobProjects: [] as any[],
+  packages: [] as any[],
   locations: [] as any[],
   items: [] as any[],
   exports: [] as any[],
@@ -17,7 +18,8 @@ const seedData = {
   parts: [] as any[],
   settings: [] as any[],
   ids: {
-    projects: 1,
+    jobProjects: 1,
+    packages: 1,
     locations: 1,
     items: 1,
     exports: 1,
@@ -29,7 +31,8 @@ const seedData = {
 
 // State Container
 const store = {
-  projects: new Map<number, any>(),
+  jobProjects: new Map<number, any>(),
+  packages: new Map<number, any>(),
   locations: new Map<number, any>(),
   items: new Map<number, any>(),
   exports: new Map<number, any>(),
@@ -45,7 +48,8 @@ function saveToStorage() {
   if (typeof window === 'undefined') return;
 
   const data = {
-    projects: Array.from(store.projects.entries()),
+    jobProjects: Array.from(store.jobProjects.entries()),
+    packages: Array.from(store.packages.entries()),
     locations: Array.from(store.locations.entries()),
     items: Array.from(store.items.entries()),
     exports: Array.from(store.exports.entries()),
@@ -72,7 +76,8 @@ function loadFromStorage() {
 
     const data = JSON.parse(raw);
 
-    store.projects = new Map(data.projects);
+    store.jobProjects = new Map(data.jobProjects || []);
+    store.packages = new Map(data.packages || []);
     store.locations = new Map(data.locations);
     store.items = new Map(data.items);
     store.exports = new Map(data.exports);
@@ -80,7 +85,7 @@ function loadFromStorage() {
     store.categories = new Map(data.categories);
     store.parts = new Map(data.parts);
     store.settings = new Map(data.settings);
-    store.ids = data.ids;
+    store.ids = { ...seedData.ids, ...(data.ids || {}) };
 
     console.log('📦 Mock DB loaded from localStorage');
     return true;
@@ -102,27 +107,43 @@ if (typeof window !== 'undefined') {
 if (!loadFromStorage()) {
   console.log('🌱 Seeding new Mock DB');
 
-  // Seed Default Project
-  const pid = store.ids.projects++;
-  store.projects.set(pid, {
-    id: pid,
+  // Seed Default Job Project + Package
+  const jpid = store.ids.jobProjects++;
+  store.jobProjects.set(jpid, {
+    id: jpid,
     project_number: "MOCK-001",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  });
+
+  const pkgId = store.ids.packages++;
+  store.packages.set(pkgId, {
+    id: pkgId,
+    project_id: jpid,
     package_name: "Browser Dev",
-    name: "Persistent Mock Project",
+    name: "Persistent Mock Package",
     description: "Data persists across reloads!",
     version: "1.0",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   });
 
-  // Seed Trial Projects
-  const seedTrial = (id: number, count: number, label: string) => {
-    store.projects.set(id, {
-      id,
+  // Seed Trial Packages (each under its own job project)
+  const seedTrial = (pkgId: number, count: number, label: string) => {
+    const jpid = store.ids.jobProjects++;
+    store.jobProjects.set(jpid, {
+      id: jpid,
       project_number: `TRIAL-${count}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+
+    store.packages.set(pkgId, {
+      id: pkgId,
+      project_id: jpid,
       package_name: label,
       name: `Trial: ${count} Items`,
-      description: `Trial project with ${count} line items for UI testing`,
+      description: `Trial package with ${count} line items for UI testing`,
       version: "1.0",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -131,7 +152,7 @@ if (!loadFromStorage()) {
     const locId = store.ids.locations++;
     store.locations.set(locId, {
       id: locId,
-      project_id: id,
+      project_id: pkgId,
       name: "Main Location",
       export_name: "MAIN",
       created_at: new Date().toISOString(),
@@ -152,7 +173,7 @@ if (!loadFromStorage()) {
       const itemId = store.ids.items++;
       store.items.set(itemId, {
         id: itemId,
-        project_id: id,
+        project_id: pkgId,
         location_id: locId,
         part_number: `${comp.pn}-${i}`,
         description: comp.desc,
@@ -167,9 +188,9 @@ if (!loadFromStorage()) {
     }
   };
 
-  seedTrial(store.ids.projects++, 10, "Small Trial");
-  seedTrial(store.ids.projects++, 40, "Medium Trial");
-  seedTrial(store.ids.projects++, 80, "Large Trial");
+  seedTrial(store.ids.packages++, 10, "Small Trial");
+  seedTrial(store.ids.packages++, 40, "Medium Trial");
+  seedTrial(store.ids.packages++, 80, "Large Trial");
 
   saveToStorage();
 }
@@ -324,32 +345,92 @@ export const settings = {
   getAll: async () => { await mockDelay(); return Array.from(store.settings.values()); }
 };
 
-// BOM Projects
-export const bomProjects = {
+// BOM Job Projects (job #)
+export const bomJobProjects = {
   getAll: async () => {
     await mockDelay();
-    return Array.from(store.projects.values()).map(p => ({
-      ...p,
-      location_count: Array.from(store.locations.values()).filter((l: any) => l.project_id === p.id).length,
-      item_count: Array.from(store.items.values()).filter((i: any) => i.project_id === p.id).length
-    })).sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+    return Array.from(store.jobProjects.values())
+      .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
   },
   getById: async (id: number) => {
     await mockDelay();
-    const p = store.projects.get(id);
+    return store.jobProjects.get(id) || null;
+  },
+  create: async (projectNumber: string) => {
+    await mockDelay();
+    const id = store.ids.jobProjects++;
+    store.jobProjects.set(id, {
+      id,
+      project_number: projectNumber,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+    saveToStorage();
+    return { rowsAffected: 1, lastInsertId: id };
+  },
+  update: async (id: number, updates: any) => {
+    await mockDelay();
+    if (store.jobProjects.has(id)) {
+      store.jobProjects.set(id, { ...store.jobProjects.get(id), ...updates, updated_at: new Date().toISOString() });
+      saveToStorage();
+      return { rowsAffected: 1, lastInsertId: undefined };
+    }
+    return { rowsAffected: 0, lastInsertId: undefined };
+  },
+  delete: async (id: number) => {
+    await mockDelay();
+    const deleted = store.jobProjects.delete(id);
+    if (deleted) {
+      // Cascade delete packages
+      for (const [pkgId, pkg] of store.packages.entries()) {
+        if ((pkg as any).project_id === id) {
+          store.packages.delete(pkgId);
+        }
+      }
+      saveToStorage();
+    }
+    return { rowsAffected: deleted ? 1 : 0, lastInsertId: undefined };
+  }
+};
+
+// BOM Packages (scoped to Job Projects)
+export const bomPackages = {
+  getByProject: async (projectId: number) => {
+    await mockDelay();
+    return Array.from(store.packages.values())
+      .filter((p: any) => p.project_id === projectId)
+      .map((p: any) => ({
+        ...p,
+        location_count: Array.from(store.locations.values()).filter((l: any) => l.project_id === p.id).length,
+        item_count: Array.from(store.items.values()).filter((i: any) => i.project_id === p.id).length
+      }))
+      .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+  },
+  getById: async (id: number) => {
+    await mockDelay();
+    const p = store.packages.get(id);
     if (!p) return null;
     return {
-      ...p,
+      ...(p as any),
       location_count: Array.from(store.locations.values()).filter((l: any) => l.project_id === id).length,
       item_count: Array.from(store.items.values()).filter((i: any) => i.project_id === id).length
     };
   },
-  create: async (projectNumber: string, packageName: string, name?: string, description?: string, version = '1.0') => {
+  getAllWithCounts: async () => {
     await mockDelay();
-    const id = store.ids.projects++;
-    store.projects.set(id, {
+    return Array.from(store.packages.values()).map((p: any) => ({
+      ...p,
+      project_number: (store.jobProjects.get((p as any).project_id) as any)?.project_number || '',
+      location_count: Array.from(store.locations.values()).filter((l: any) => l.project_id === p.id).length,
+      item_count: Array.from(store.items.values()).filter((i: any) => i.project_id === p.id).length
+    })).sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+  },
+  create: async (projectId: number, packageName: string, name?: string, description?: string, version = '1.0') => {
+    await mockDelay();
+    const id = store.ids.packages++;
+    store.packages.set(id, {
       id,
-      project_number: projectNumber,
+      project_id: projectId,
       package_name: packageName,
       name: name ?? null,
       description: description ?? null,
@@ -362,8 +443,8 @@ export const bomProjects = {
   },
   update: async (id: number, updates: any) => {
     await mockDelay();
-    if (store.projects.has(id)) {
-      store.projects.set(id, { ...store.projects.get(id), ...updates, updated_at: new Date().toISOString() });
+    if (store.packages.has(id)) {
+      store.packages.set(id, { ...store.packages.get(id), ...updates, updated_at: new Date().toISOString() });
       saveToStorage();
       return { rowsAffected: 1, lastInsertId: undefined };
     }
@@ -371,11 +452,95 @@ export const bomProjects = {
   },
   delete: async (id: number) => {
     await mockDelay();
-    const deleted = store.projects.delete(id);
+    const deleted = store.packages.delete(id);
     if (deleted) {
       // Cascade delete locations and items
-      // (Simplified for mock - real DB has foreign keys)
-      // Note: We don't implement full cascade here for simplicity unless needed
+      for (const [locId, loc] of store.locations.entries()) {
+        if ((loc as any).project_id === id) {
+          store.locations.delete(locId);
+        }
+      }
+      for (const [itemId, item] of store.items.entries()) {
+        if ((item as any).project_id === id) {
+          store.items.delete(itemId);
+        }
+      }
+      saveToStorage();
+    }
+    return { rowsAffected: deleted ? 1 : 0, lastInsertId: undefined };
+  }
+};
+
+// BOM Projects (legacy - deprecated, use bomPackages)
+export const bomProjects = {
+  getAll: async () => {
+    await mockDelay();
+    return Array.from(store.packages.values()).map((p: any) => {
+      const jp = store.jobProjects.get(p.project_id) as any;
+      return {
+        ...p,
+        project_number: jp?.project_number || '',
+        location_count: Array.from(store.locations.values()).filter((l: any) => l.project_id === p.id).length,
+        item_count: Array.from(store.items.values()).filter((i: any) => i.project_id === p.id).length
+      };
+    }).sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+  },
+  getById: async (id: number) => {
+    await mockDelay();
+    const p = store.packages.get(id);
+    if (!p) return null;
+    const jp = store.jobProjects.get((p as any).project_id) as any;
+    return {
+      ...(p as any),
+      project_number: jp?.project_number || '',
+      location_count: Array.from(store.locations.values()).filter((l: any) => l.project_id === id).length,
+      item_count: Array.from(store.items.values()).filter((i: any) => i.project_id === id).length
+    };
+  },
+  create: async (projectNumber: string, packageName: string, name?: string, description?: string, version = '1.0') => {
+    await mockDelay();
+    // Create job project first, then package
+    const jpid = store.ids.jobProjects++;
+    store.jobProjects.set(jpid, {
+      id: jpid,
+      project_number: projectNumber,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+
+    const id = store.ids.packages++;
+    store.packages.set(id, {
+      id,
+      project_id: jpid,
+      package_name: packageName,
+      name: name ?? null,
+      description: description ?? null,
+      version,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+    saveToStorage();
+    return { rowsAffected: 1, lastInsertId: id };
+  },
+  update: async (id: number, updates: any) => {
+    await mockDelay();
+    if (store.packages.has(id)) {
+      store.packages.set(id, { ...store.packages.get(id), ...updates, updated_at: new Date().toISOString() });
+      saveToStorage();
+      return { rowsAffected: 1, lastInsertId: undefined };
+    }
+    return { rowsAffected: 0, lastInsertId: undefined };
+  },
+  delete: async (id: number) => {
+    await mockDelay();
+    const deleted = store.packages.delete(id);
+    if (deleted) {
+      // Cascade delete locations and items
+      for (const [locId, loc] of store.locations.entries()) {
+        if ((loc as any).project_id === id) {
+          store.locations.delete(locId);
+        }
+      }
       saveToStorage();
     }
     return { rowsAffected: deleted ? 1 : 0, lastInsertId: undefined };

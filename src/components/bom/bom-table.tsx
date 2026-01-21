@@ -41,7 +41,7 @@ const columnHelper = createColumnHelper<BOMItem>();
 export function BomTable() {
   const {
     items,
-    currentProject,
+    currentScopePackageId,
     currentLocationId,
     updateItem,
     deleteItem,
@@ -172,10 +172,10 @@ export function BomTable() {
   });
 
   const handlePartSelect = (part: SearchResult) => {
-    if (!currentProject || !currentLocationId) return;
-    
+    if (!currentScopePackageId || !currentLocationId) return;
+
     createItem({
-      project_id: currentProject.id,
+      project_id: currentScopePackageId,
       location_id: currentLocationId,
       part_id: part.id,
       part_number: part.part_number,
@@ -196,9 +196,9 @@ export function BomTable() {
   };
 
   const handleAddNew = () => {
-    if (!currentProject || !currentLocationId) return;
+    if (!currentScopePackageId || !currentLocationId) return;
     createItem({
-      project_id: currentProject.id,
+      project_id: currentScopePackageId,
       location_id: currentLocationId,
       part_id: null,
       part_number: 'NEW-PART',

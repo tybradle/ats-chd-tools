@@ -22,6 +22,12 @@ pub fn run() {
             sql: include_str!("../migrations/003_glenair_tables.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 4,
+            description: "Project/Package scoping (job projects + packages)",
+            sql: include_str!("../migrations/004_project_package_scoping.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

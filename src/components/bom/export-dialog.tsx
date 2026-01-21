@@ -29,11 +29,11 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   const [format, setFormat] = useState<ExportFormatOption>('XML');
   const [includeZW1, setIncludeZW1] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const { currentProject, locations, items } = useBOMStore();
+  const { currentScope, locations, items } = useBOMStore();
 
   const handleExport = async () => {
-    if (!currentProject) {
-      toast.error('No project loaded');
+    if (!currentScope) {
+      toast.error('No package selected');
       return;
     }
 
@@ -51,7 +51,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
       
       switch (format) {
         case 'XML':
-          content = generateEplanXML(currentProject, locations, items);
+          content = generateEplanXML(currentScope, locations, items);
           ext = 'xml';
           filterName = 'Eplan XML';
           break;
@@ -61,14 +61,14 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           filterName = 'CSV Files';
           break;
         case 'JSON':
-          content = generateJSON(currentProject, locations, items);
+          content = generateJSON(currentScope, locations, items);
           ext = 'json';
           filterName = 'JSON Files';
           break;
       }
 
-      const defaultFilename = `${currentProject.project_number}_${currentProject.package_name}_BOM.${ext}`;
-      
+      const defaultFilename = `${currentScope.project_number}_${currentScope.package_name}_BOM.${ext}`;
+
       // Browser Download Fallback
       if (!isTauri) {
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -78,9 +78,9 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         a.download = defaultFilename;
         a.click();
         URL.revokeObjectURL(url);
-        
+
         if (format === 'XML' && includeZW1) {
-          const zw1Content = generateZW1Header(currentProject.project_number);
+          const zw1Content = generateZW1Header(currentScope.project_number);
           const zw1Blob = new Blob([zw1Content], { type: 'text/plain;charset=utf-8' });
           const zw1Url = URL.createObjectURL(zw1Blob);
           const zw1A = document.createElement('a');
@@ -89,7 +89,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           zw1A.click();
           URL.revokeObjectURL(zw1Url);
         }
-        
+
         toast.success(`Downloaded ${defaultFilename}`);
         onOpenChange(false);
         return;
@@ -102,17 +102,17 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
       if (path) {
         await writeFile(path, new TextEncoder().encode(content));
-        
+
         // For XML exports, optionally create .zw1 header file
         if (format === 'XML' && includeZW1) {
-          const zw1Content = generateZW1Header(currentProject.project_number);
+          const zw1Content = generateZW1Header(currentScope.project_number);
           const zw1Path = path.replace(/\.xml$/i, '.zw1');
           await writeFile(zw1Path, new TextEncoder().encode(zw1Content));
           toast.success(`Exported to ${path} and ${zw1Path}`);
         } else {
           toast.success(`Exported to ${path}`);
         }
-        
+
         onOpenChange(false);
       }
     } catch (error) {
@@ -144,7 +144,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             Export BOM
           </DialogTitle>
           <DialogDescription>
-            Export {items.length} items from {currentProject?.project_number || 'project'}
+            Export {items.length} items from {currentScope?.project_number || 'package'}
           </DialogDescription>
         </DialogHeader>
         
@@ -206,7 +206,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           <div className="rounded-md bg-muted p-3 text-sm">
             <div className="font-medium mb-1">Export Summary</div>
             <div className="text-muted-foreground space-y-1">
-              <div>Project: {currentProject?.project_number}</div>
+              <div>Package: {currentScope?.project_number} / {currentScope?.package_name}</div>
               <div>Locations: {locations.length}</div>
               <div>Items: {items.length}</div>
             </div>

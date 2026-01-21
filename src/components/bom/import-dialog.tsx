@@ -40,7 +40,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
   const [importing, setImporting] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState<{ current: number; total: number; message: string } | null>(null);
-  const { currentProject, currentLocationId, loadItems } = useBOMStore();
+  const { currentScopePackageId, currentLocationId, loadItems } = useBOMStore();
 
   const resetState = () => {
     setStep('upload');
@@ -264,7 +264,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
   };
 
   const handleImport = async () => {
-    if (!currentProject || !currentLocationId) {
+    if (!currentScopePackageId || !currentLocationId) {
       toast.error('No location selected');
       return;
     }
@@ -289,7 +289,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
 
       // 1. Map all items first (usually fast enough, but if very large we could chunk this too)
       // For now, map all at once to get the full list
-      const allItems = mapImportRowsToBOM(csvData, mapping, currentProject.id, currentLocationId);
+      const allItems = mapImportRowsToBOM(csvData, mapping, currentScopePackageId, currentLocationId);
       const itemsWithMetadata = allItems.map(item => ({ ...item, metadata: null }));
 
       for (let i = 0; i < itemsWithMetadata.length; i += CHUNK_SIZE) {
@@ -314,7 +314,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
       setProgress({ current: total, total, message: 'Finalizing...' });
 
       // Single reload at the end
-      await loadItems(currentProject.id, currentLocationId);
+      await loadItems(currentScopePackageId, currentLocationId);
 
       toast.success(`Imported ${total} items`);
       onOpenChange(false);

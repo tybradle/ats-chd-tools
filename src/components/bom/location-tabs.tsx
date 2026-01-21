@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 
 export function LocationTabs() {
   const {
-    currentProject,
+    currentScopePackageId,
     locations,
     currentLocationId,
     setCurrentLocationId,
@@ -36,10 +36,10 @@ export function LocationTabs() {
   const [editExportName, setEditExportName] = useState('');
 
   const handleAdd = async () => {
-    if (!currentProject || !newName.trim()) return;
+    if (!currentScopePackageId || !newName.trim()) return;
 
     try {
-      await createLocation(currentProject.id, newName.trim());
+      await createLocation(currentScopePackageId, newName.trim());
       setNewName('');
       setIsAddOpen(false);
       toast.success('Location added');

@@ -218,9 +218,128 @@ export const settings = {
 // ============================================
 
 import type { GlenairContact, GlenairArrangement, GlenairPHM } from '@/types/glenair';
-import type { BOMProject, BOMLocation, BOMItem, BOMItemWithLocation, BOMProjectWithCounts, BOMLocationWithCount, BOMExport, ExportFormat } from '@/types/bom';
+import type { BOMProject, BOMLocation, BOMItem, BOMItemWithLocation, BOMProjectWithCounts, BOMLocationWithCount, BOMExport, ExportFormat, BOMJobProject, BOMPackage, BOMPackageWithCounts } from '@/types/bom';
 
-// BOM Projects
+// BOM Job Projects (job #)
+export const bomJobProjects = {
+  getAll: () =>
+    query<BOMJobProject>(`
+      SELECT * FROM bom_job_projects
+      ORDER BY updated_at DESC
+    `),
+
+  getById: (id: number) =>
+    query<BOMJobProject>('SELECT * FROM bom_job_projects WHERE id = ?', [id])
+      .then(rows => rows[0] ?? null),
+
+  create: (projectNumber: string) =>
+    execute(
+      `INSERT INTO bom_job_projects (project_number)
+       VALUES (?)`,
+      [projectNumber]
+    ),
+
+  update: (id: number, updates: { project_number?: string }) => {
+    const fields: string[] = [];
+    const values: unknown[] = [];
+
+    if (updates.project_number !== undefined) {
+      fields.push('project_number = ?');
+      values.push(updates.project_number);
+    }
+
+    if (fields.length === 0) return Promise.resolve({ rowsAffected: 0, lastInsertId: 0 });
+
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+
+    return execute(`UPDATE bom_job_projects SET ${fields.join(', ')} WHERE id = ?`, values);
+  },
+
+  delete: (id: number) =>
+    execute('DELETE FROM bom_job_projects WHERE id = ?', [id]),
+};
+
+// BOM Packages (scoped to Job Projects)
+export const bomPackages = {
+  getByProject: (projectId: number) =>
+    query<BOMPackageWithCounts>(`
+      SELECT
+        p.*,
+        COUNT(DISTINCT l.id) as location_count,
+        COUNT(DISTINCT i.id) as item_count
+      FROM bom_packages p
+      LEFT JOIN bom_locations l ON p.id = l.project_id
+      LEFT JOIN bom_items i ON p.id = i.project_id
+      WHERE p.project_id = ?
+      GROUP BY p.id
+      ORDER BY p.updated_at DESC
+    `, [projectId]),
+
+  getById: (id: number) =>
+    query<BOMPackageWithCounts>(`
+      SELECT
+        p.*,
+        COUNT(DISTINCT l.id) as location_count,
+        COUNT(DISTINCT i.id) as item_count
+      FROM bom_packages p
+      LEFT JOIN bom_locations l ON p.id = l.project_id
+      LEFT JOIN bom_items i ON p.id = i.project_id
+      WHERE p.id = ?
+      GROUP BY p.id
+    `, [id]).then(rows => rows[0] ?? null),
+
+  getAllWithCounts: () =>
+    query<BOMPackageWithCounts>(`
+      SELECT
+        p.*,
+        jp.project_number,
+        COUNT(DISTINCT l.id) as location_count,
+        COUNT(DISTINCT i.id) as item_count
+      FROM bom_packages p
+      JOIN bom_job_projects jp ON jp.id = p.project_id
+      LEFT JOIN bom_locations l ON p.id = l.project_id
+      LEFT JOIN bom_items i ON p.id = i.project_id
+      GROUP BY p.id
+      ORDER BY p.updated_at DESC
+    `),
+
+  create: (
+    projectId: number,
+    packageName: string,
+    name?: string,
+    description?: string,
+    version = '1.0'
+  ) =>
+    execute(
+      `INSERT INTO bom_packages (project_id, package_name, name, description, version)
+       VALUES (?, ?, ?, ?, ?)`,
+      [projectId, packageName, name ?? null, description ?? null, version]
+    ),
+
+  update: (id: number, updates: Partial<Omit<BOMPackage, 'id' | 'created_at' | 'updated_at'>>) => {
+    const fields: string[] = [];
+    const values: unknown[] = [];
+
+    if (updates.package_name !== undefined) { fields.push('package_name = ?'); values.push(updates.package_name); }
+    if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
+    if (updates.description !== undefined) { fields.push('description = ?'); values.push(updates.description); }
+    if (updates.version !== undefined) { fields.push('version = ?'); values.push(updates.version); }
+    if (updates.metadata !== undefined) { fields.push('metadata = ?'); values.push(updates.metadata); }
+
+    if (fields.length === 0) return Promise.resolve({ rowsAffected: 0, lastInsertId: 0 });
+
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+
+    return execute(`UPDATE bom_packages SET ${fields.join(', ')} WHERE id = ?`, values);
+  },
+
+  delete: (id: number) =>
+    execute('DELETE FROM bom_packages WHERE id = ?', [id]),
+};
+
+// BOM Projects (legacy - deprecated, use bomPackages)
 export const bomProjects = {
   getAll: () =>
     query<BOMProjectWithCounts>(`

@@ -19,13 +19,11 @@
         "minHeight": 600,
         "resizable": true,
         "fullscreen": false,
-        "center": true,
-        "devtools": true
+        "center": true
       }
     ],
     "security": {
-      "csp": null,
-      "devtools": true
+      "csp": null
     }
   },
   "bundle": {
