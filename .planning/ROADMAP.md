@@ -26,7 +26,7 @@ Plans:
 - [x] 01-05-PLAN.md — ProjectManagerDialog CRUD UI + inline uniqueness errors + checkpoint
 - [x] 01-06-PLAN.md — Gap closure: enforce truly blocking BOM entry modal in all BomPage branches
 - [x] 01-07-PLAN.md — Gap closure: fix flushPendingWrites hang so scope switching cannot deadlock
-- [ ] 01-08-PLAN.md — Gap closure: human verification of BOM entry gating + scope switching stability
+- [x] 01-08-PLAN.md — Gap closure: human verification of BOM entry gating + scope switching stability
 
 **Success Criteria (observable):**
 1. Landing page shows module tiles; non-ready modules are disabled and labeled “Coming soon”.
@@ -90,7 +90,7 @@ Plans:
 
 | Phase | Name | Status |
 |------:|------|--------|
-| 1 | Project/Package Scoping + Entry UX | In Progress (7/8 plans complete) |
+| 1 | Project/Package Scoping + Entry UX | Complete (8/8 plans complete) |
 | 2 | BOM Translation Release Rails | Planned |
 | 3 | Backup / Restore / Merge | Planned |
 | 4 | Settings + UNC Updater | Planned |
