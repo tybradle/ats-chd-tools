@@ -16,7 +16,7 @@ ATS CHD Tools is an offline-first Windows desktop platform (Tauri + React + SQLi
 
 **Requirements:** PROJ-01, PROJ-02, PROJ-03, PROJ-04, PROJ-05, APP-01
 
-**Plans:** 8 plans (7 complete)
+**Plans:** 8 plans (7 complete, 1 gap-closure remaining)
 
 Plans:
 - [x] 01-01-PLAN.md — Add SQLite migration for Project(job#) → Packages and preserve scope IDs
@@ -25,7 +25,7 @@ Plans:
 - [x] 01-04-PLAN.md — Landing tiles + BOM routing + blocking modal wiring
 - [x] 01-05-PLAN.md — ProjectManagerDialog CRUD UI + inline uniqueness errors + checkpoint
 - [x] 01-06-PLAN.md — Gap closure: enforce truly blocking BOM entry modal in all BomPage branches
-- [ ] 01-07-PLAN.md — Gap closure: fix flushPendingWrites hang so scope switching cannot deadlock
+- [x] 01-07-PLAN.md — Gap closure: fix flushPendingWrites hang so scope switching cannot deadlock
 - [ ] 01-08-PLAN.md — Gap closure: human verification of BOM entry gating + scope switching stability
 
 **Success Criteria (observable):**
