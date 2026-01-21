@@ -1,4 +1,5 @@
 <!-- OPENSPEC:START -->
+<!-- Last updated: 2026-01-21 (Git Practices test) -->
 # OpenSpec Instructions
 
 These instructions are for AI assistants working in this project.
