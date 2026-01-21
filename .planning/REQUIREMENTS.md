@@ -9,11 +9,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Project & Package Model
 
-- [ ] **PROJ-01**: User can create/select/rename/delete a Project identified by a job number (e.g., "14403").
-- [ ] **PROJ-02**: A Project can contain multiple Packages.
-- [ ] **PROJ-03**: Package names can repeat across different Projects.
-- [ ] **PROJ-04**: Package names are unique within a Project (enforce/validate on create/rename).
-- [ ] **PROJ-05**: When user enters BOM module, a Project Manager modal opens immediately and supports create/select/rename/delete for Projects and Packages.
+- [x] **PROJ-01**: User can create/select/rename/delete a Project identified by a job number (e.g., "14403").
+- [x] **PROJ-02**: A Project can contain multiple Packages.
+- [x] **PROJ-03**: Package names can repeat across different Projects.
+- [x] **PROJ-04**: Package names are unique within a Project (enforce/validate on create/rename).
+- [x] **PROJ-05**: When user enters BOM module, a Project Manager modal opens immediately and supports create/select/rename/delete for Projects and Packages.
 
 ### BOM Workflow
 
@@ -39,7 +39,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### App Shell / Settings / Release Quality
 
-- [ ] **APP-01**: Landing page shows module tiles; non-ready modules are visible but disabled and labeled "Coming soon".
+- [x] **APP-01**: Landing page shows module tiles; non-ready modules are visible but disabled and labeled "Coming soon".
 - [ ] **APP-02**: Settings page is implemented as advanced app settings (at minimum: update UNC path + auto-check toggle + backup/restore/merge entry points + About/version).
 - [ ] **REL-01**: BOM Translation workflow is crash-free for expected BOM sizes; failures surface actionable errors (no silent data loss).
 
@@ -72,11 +72,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PROJ-01 | 1 | Pending |
-| PROJ-02 | 1 | Pending |
-| PROJ-03 | 1 | Pending |
-| PROJ-04 | 1 | Pending |
-| PROJ-05 | 1 | Pending |
+| PROJ-01 | 1 | Complete |
+| PROJ-02 | 1 | Complete |
+| PROJ-03 | 1 | Complete |
+| PROJ-04 | 1 | Complete |
+| PROJ-05 | 1 | Complete |
 | BOM-01 | 2 | Pending |
 | BOM-02 | 2 | Pending |
 | BOM-03 | 2 | Pending |
@@ -90,7 +90,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UPD-01 | 4 | Pending |
 | UPD-02 | 4 | Pending |
 | UPD-03 | 4 | Pending |
-| APP-01 | 1 | Pending |
+| APP-01 | 1 | Complete |
 | APP-02 | 4 | Pending |
 | REL-01 | 2 | Pending |
 

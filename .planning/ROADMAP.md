@@ -16,7 +16,7 @@ ATS CHD Tools is an offline-first Windows desktop platform (Tauri + React + SQLi
 
 **Requirements:** PROJ-01, PROJ-02, PROJ-03, PROJ-04, PROJ-05, APP-01
 
-**Plans:** 8 plans (7 complete, 1 gap-closure remaining)
+**Plans:** 8 plans (all complete)
 
 Plans:
 - [x] 01-01-PLAN.md — Add SQLite migration for Project(job#) → Packages and preserve scope IDs

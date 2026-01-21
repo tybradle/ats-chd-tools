@@ -10,13 +10,13 @@
 
 **Current milestone:** v1
 
-**Phase:** 1 — Project/Package Scoping + Entry UX
+**Phase:** 2 — BOM Translation Release Rails
 
-**Plan:** 8 of 8 plans complete
+**Plan:** Phase 2 planning pending
 
-**Status:** Phase complete
+**Status:** Phase 1 complete; Ready for Phase 2
 
-**Progress:** [████] Phase 1 complete (8/8 plans)
+**Progress:** [=---] 1/4 phases complete
 
 ## Performance Metrics (v1)
 
