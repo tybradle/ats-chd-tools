@@ -2,19 +2,19 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { useBOMStore } from '@/stores/bom-store';
 import { LocationTabs } from '@/components/bom/location-tabs';
 import { BomTable } from '@/components/bom/bom-table';
 import { ProjectManagerDialog } from '@/components/bom/project-manager-dialog';
-import { Loader2 } from 'lucide-react';
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function BomPage() {
   const navigate = useNavigate();
   const {
     currentScope,
     currentScopePackageId,
-    loading,
     error,
     loadJobProjects,
     loadAllPackages,
@@ -59,21 +59,7 @@ export function BomPage() {
     setIsProjectManagerOpen(open);
   };
 
-  if (loading && !currentScope) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle>Loading BOM Workspace</CardTitle>
-            <CardDescription>Please wait...</CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Loader2 className="animate-spin h-8 w-8 text-primary mx-auto" />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+
 
   if (error || !currentScope) {
     return (
@@ -85,12 +71,26 @@ export function BomPage() {
               Choose a Project and Package to begin working with BOMs.
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center">
+          <CardContent className="text-center space-y-4">
+            {error && (
+              <Alert variant="destructive" className="text-left">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <ProjectManagerDialog
               open={isProjectManagerOpen}
               onOpenChange={handleOpenChange}
               onSelectPackage={handleSelectPackage}
             />
+            
+            {!isProjectManagerOpen && (
+               <Button onClick={() => setIsProjectManagerOpen(true)}>
+                 Open Project Manager
+               </Button>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -311,6 +311,7 @@ export const useBOMStore = create<BOMStore>((set, get) => ({
     try {
       // Load package details
       const pkg = await bomPackages.getById(packageId);
+
       if (!pkg) {
         set({ error: 'Package not found' });
         return;
@@ -318,6 +319,7 @@ export const useBOMStore = create<BOMStore>((set, get) => ({
 
       // Load job project for project_number
       const jp = await bomJobProjects.getById(pkg.project_id);
+
       if (!jp) {
         set({ error: 'Job project not found' });
         return;
@@ -331,6 +333,7 @@ export const useBOMStore = create<BOMStore>((set, get) => ({
         currentLocationId: null,
         selectedItemIds: [],
         searchTerm: '',
+        error: null, // Clear any previous error
       });
 
       // Persist selection

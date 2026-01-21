@@ -5,11 +5,6 @@
 -- Strategy: Preserve existing scope IDs by copying bom_projects.id into bom_packages.id
 -- ============================================
 
-BEGIN TRANSACTION;
-
--- Disable foreign key enforcement temporarily for table rebuild
-PRAGMA foreign_keys = OFF;
-
 -- Step 1: Rename existing table
 ALTER TABLE bom_projects RENAME TO bom_projects_old;
 
@@ -153,8 +148,3 @@ CREATE INDEX IF NOT EXISTS idx_bom_exports_format ON bom_exports(format);
 
 -- Step 8: Drop old table
 DROP TABLE bom_projects_old;
-
--- Re-enable foreign keys
-PRAGMA foreign_keys = ON;
-
-COMMIT;

@@ -268,7 +268,13 @@ export function ProjectManagerDialog({
 
   // Select a package and set scope
   const handleSelectPackage = async (packageId: number) => {
-    await setScope(packageId);
+    try {
+      await setScope(packageId);
+    } catch (error) {
+      toast.error('Failed to open package: ' + (error instanceof Error ? error.message : String(error)));
+      return; // Stop if scope setting failed
+    }
+
     if (onSelectPackage) {
       onSelectPackage(packageId);
     } else if (onSelectProject) {
@@ -397,7 +403,9 @@ export function ProjectManagerDialog({
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleSelectPackage(pkg.id)}
+                              onClick={() => {
+                                handleSelectPackage(pkg.id);
+                              }}
                             >
                               Open
                             </Button>
