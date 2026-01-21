@@ -4,7 +4,16 @@
 
 ## Tech Debt
 
-**SQL outside the “single source of truth”**
+**tauri-plugin-sql does not support reliable multi-statement transactions from JS**
+- Issue: `@tauri-apps/plugin-sql` uses a sqlx connection pool; separate `db.execute()` calls may run on different connections.
+- Symptom: `BEGIN` succeeds but later `COMMIT` fails with `cannot commit - no transaction is active` even though inserts may persist.
+- Impact: JS-side manual `BEGIN/COMMIT/ROLLBACK` helpers are unreliable; can cause misleading error handling.
+- Guidance:
+  - Prefer single-statement atomic writes (e.g., multi-row INSERT batching under SQLite 999 bind param limit).
+  - If true atomic multi-statement transactions are required, implement via a Rust command using sqlx `Transaction` to guarantee same-connection execution.
+- Reference: Encountered during BOM Excel import bulk insert.
+
+**SQL outside the "single source of truth"**
 - Issue: SQL access is not fully centralized; UI/components call `query()` directly instead of going through the DB module surface.
 - Files: `src/components/bom/part-search-dialog.tsx`, `src/lib/db/client.ts`, `src/lib/db/real-client.ts`
 - Impact: Makes query auditing/optimization harder; encourages ad-hoc SQL; increases risk of inconsistent patterns (pagination, limits, JOINs, FTS usage).

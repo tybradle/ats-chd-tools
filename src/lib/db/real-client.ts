@@ -51,6 +51,10 @@ export async function execute(
 
 /**
  * Run multiple queries in a transaction
+ *
+ * NOTE: With @tauri-apps/plugin-sql (sqlx pool), manual BEGIN/COMMIT statements
+ * are not guaranteed to run on the same connection. Prefer single-statement writes
+ * or implement true transactions in Rust if atomic multi-statement behavior is required.
  */
 export async function transaction<T>(fn: (db: Database) => Promise<T>): Promise<T> {
   const database = await getDb();
@@ -60,7 +64,11 @@ export async function transaction<T>(fn: (db: Database) => Promise<T>): Promise<
     await database.execute("COMMIT");
     return result;
   } catch (error) {
-    await database.execute("ROLLBACK");
+    try {
+      await database.execute("ROLLBACK");
+    } catch (rollbackError) {
+      console.warn("Rollback failed:", rollbackError);
+    }
     throw error;
   }
 }
@@ -479,36 +487,50 @@ export const bomItems = {
     ),
 
   bulkCreate: async (items: Omit<BOMItem, 'id' | 'created_at' | 'updated_at'>[]) => {
+    if (items.length === 0) return [];
+
     // Get highest sort_order for the project
     const projectId = items[0]?.project_id;
     const lastItem = await query<{ max_order: number }>(
       'SELECT MAX(sort_order) as max_order FROM bom_items WHERE project_id = ?',
       [projectId]
     );
-    const startOrder = (lastItem[0]?.max_order ?? 0) + 1;
+    let startOrder = (lastItem[0]?.max_order ?? 0) + 1;
 
-    // Insert all items
-    return transaction(async (db) => {
-      const results = [];
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        const result = await db.execute(
-          `INSERT INTO bom_items (
-            project_id, location_id, part_id, part_number, description,
-            secondary_description, quantity, unit, unit_price, manufacturer,
-            supplier, category, reference_designator, is_spare, metadata, sort_order
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            item.project_id, item.location_id, item.part_id, item.part_number,
-            item.description, item.secondary_description, item.quantity, item.unit,
-            item.unit_price, item.manufacturer, item.supplier, item.category,
-            item.reference_designator, item.is_spare, item.metadata, startOrder + i
-          ]
+    // Insert items in batches (each batch is atomic as a single multi-row INSERT)
+    // SQLite has a limit of 999 bind parameters per statement
+    const COLUMNS_PER_ROW = 16;
+    const SQLITE_MAX_PARAMS = 999;
+    const MAX_ROWS_PER_BATCH = Math.floor(SQLITE_MAX_PARAMS / COLUMNS_PER_ROW); // 62
+    const db = await getDb();
+    const results: Array<{ rowsAffected: number; lastInsertId: number | undefined }> = [];
+
+    for (let i = 0; i < items.length; i += MAX_ROWS_PER_BATCH) {
+      const batch = items.slice(i, Math.min(i + MAX_ROWS_PER_BATCH, items.length));
+      const placeholders = batch.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
+      const values: unknown[] = [];
+      for (let j = 0; j < batch.length; j++) {
+        const item = batch[j];
+        values.push(
+          item.project_id, item.location_id, item.part_id, item.part_number,
+          item.description, item.secondary_description, item.quantity, item.unit,
+          item.unit_price, item.manufacturer, item.supplier, item.category,
+          item.reference_designator, item.is_spare, item.metadata, startOrder + j
         );
-        results.push(result);
       }
-      return results;
-    });
+      await db.execute(
+        `INSERT INTO bom_items (
+          project_id, location_id, part_id, part_number, description,
+          secondary_description, quantity, unit, unit_price, manufacturer,
+          supplier, category, reference_designator, is_spare, metadata, sort_order
+        ) VALUES ${placeholders}`,
+        values
+      );
+      results.push({ rowsAffected: batch.length, lastInsertId: undefined });
+      startOrder += batch.length;
+    }
+
+    return results;
   },
 
   update: (id: number, updates: Partial<Omit<BOMItem, 'id' | 'created_at' | 'updated_at'>>) => {

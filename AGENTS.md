@@ -34,7 +34,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 ### Standard Workflow
 
-1. **Read requirements** — Check `docs/REQUIREMENTS.md` and `docs/architecture/decisions.md` to understand constraints and goals
+1. **Read requirements + constraints** — Check `docs/REQUIREMENTS.md`, `docs/architecture/decisions.md`, and `docs/architecture/concerns.md` to understand constraints and goals
 2. **Discuss approach** — Work with the user to clarify the implementation strategy (use Architect agent if needed)
 3. **Implement incrementally** — Execute changes via Executor agent in small, coherent steps
 4. **Validate** — Test changes manually and review code for compliance with project standards
