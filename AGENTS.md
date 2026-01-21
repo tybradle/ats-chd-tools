@@ -17,6 +17,35 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 <!-- OPENSPEC:END -->
 
+## Workflow (IMPORTANT)
+
+**DO NOT use GSD workflow** — The `.planning/` directory has been archived to `.planning-archive-2026-01-21/` and `.memory/` to `.memory-archive-2026-01-21/`. Use the new documentation structure below.
+
+### Reference Documents
+
+| Document | Purpose |
+|----------|---------|
+| `docs/REQUIREMENTS.md` | v1 scope checklist — what we're building toward |
+| `docs/ROADMAP.md` | High-level roadmap and phase breakdown |
+| `docs/architecture/concerns.md` | Technical debt and known issues to address |
+| `docs/architecture/decisions.md` | Foundational architectural decisions |
+| `.planning-archive-2026-01-21/` | Historical GSD context (read-only) |
+| `.memory-archive-2026-01-21/` | Historical memory artifacts (read-only) |
+
+### Standard Workflow
+
+1. **Read requirements** — Check `docs/REQUIREMENTS.md` and `docs/architecture/decisions.md` to understand constraints and goals
+2. **Discuss approach** — Work with the user to clarify the implementation strategy (use Architect agent if needed)
+3. **Implement incrementally** — Execute changes via Executor agent in small, coherent steps
+4. **Validate** — Test changes manually and review code for compliance with project standards
+5. **Keep changes small** — Each increment should be testable and independently valuable
+
+### Planning & Specs
+
+If you need to create formal specs or proposals, use **OpenSpec** (see `@/openspec/AGENTS.md`).
+
+---
+
 # ATS CHD Tools - AI Agent Guidelines
 
 ## Project Overview
