@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { open } from '@tauri-apps/plugin-dialog';
 import { parseCSV, getCSVHeaders } from '@/lib/csv-parser';
-import { parseExcel, getExcelSheets, parseExcelSheet, getWorkbook } from '@/lib/excel-parser';
+import { getExcelSheets, parseExcelSheet, getWorkbook, getExcelSheetPreview, type ExcelSheetPreview } from '@/lib/excel-parser';
 import { mapImportRowsToBOM } from '@/lib/import-utils';
 import { useBOMStore } from '@/stores/bom-store';
 import { bomItems, isTauri } from '@/lib/db/client';
@@ -40,6 +40,9 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
   const [importing, setImporting] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState<{ current: number; total: number; message: string } | null>(null);
+  const [workbook, setWorkbook] = useState<import('xlsx').WorkBook | null>(null);
+  const [sheetPreview, setSheetPreview] = useState<ExcelSheetPreview | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const { currentScopePackageId, currentLocationId, loadItems } = useBOMStore();
 
   const resetState = () => {
@@ -55,6 +58,9 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
     setImporting(false);
     setProcessing(false);
     setProgress(null);
+    setWorkbook(null);
+    setSheetPreview(null);
+    setPreviewError(null);
   };
 
   const processParsedRows = (rows: CSVRow[]) => {
@@ -152,10 +158,10 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
       let rows: CSVRow[] = [];
 
       if (isExcel) {
-        // Excel file - check for multiple sheets
-        // USE OPTIMIZED SINGLE-PASS PARSING
-        const workbook = getWorkbook(contents);
-        const sheets = getExcelSheets(workbook);
+        // Excel file - always go to sheet-select step with cached workbook
+        const wb = getWorkbook(contents);
+        setWorkbook(wb);
+        const sheets = getExcelSheets(wb);
         setAvailableSheets(sheets);
 
         if (sheets.length === 0) {
@@ -164,19 +170,31 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
           return;
         }
 
-        if (sheets.length === 1) {
-          // Single sheet - parse directly
-          setSelectedSheet(sheets[0]);
-          rows = parseExcel(workbook, 0, headerRow - 1);
-          console.log(`Parsing single Excel sheet: "${sheets[0]}"`);
-        } else {
-          // Multiple sheets - show selection step
-          setStep('sheet-select');
-          setProcessing(false);
-          return;
+        // Preselect first sheet
+        const initialSheet = sheets[0];
+        setSelectedSheet(initialSheet);
+
+        // Compute preview for initial sheet
+        const preview = getExcelSheetPreview(wb, initialSheet, headerRow - 1, 5, 20);
+        setSheetPreview(preview);
+        setPreviewError(null);
+
+        if (preview.headers.length === 0) {
+          setPreviewError('No data found on this sheet');
         }
+
+        // Always go to sheet-select step
+        setStep('sheet-select');
+        setProcessing(false);
+        return;
       } else {
-        // CSV file
+        // CSV file - clear Excel-related state
+        setWorkbook(null);
+        setSheetPreview(null);
+        setPreviewError(null);
+        setAvailableSheets([]);
+        setSelectedSheet('');
+
         const text = new TextDecoder().decode(contents);
         rows = parseCSV(text);
       }
@@ -198,7 +216,7 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
   };
 
   const handleSheetSelection = () => {
-    if (!fileBuffer || !selectedSheet) {
+    if (!workbook || !selectedSheet) {
       toast.error('Please select a sheet');
       return;
     }
@@ -207,7 +225,6 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
 
     setTimeout(() => {
       try {
-        const workbook = getWorkbook(fileBuffer);
         const rows = parseExcelSheet(workbook, selectedSheet, headerRow - 1);
 
         if (rows.length === 0) {
@@ -233,6 +250,18 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
     setHeaderRow(row);
   };
 
+  const updateSheetPreview = (sheetName: string) => {
+    if (!workbook) return;
+    try {
+      const preview = getExcelSheetPreview(workbook, sheetName, headerRow - 1, 5, 20);
+      setSheetPreview(preview);
+      setPreviewError(preview.headers.length === 0 ? 'No data found on this sheet' : null);
+    } catch (e) {
+      setSheetPreview(null);
+      setPreviewError(e instanceof Error ? e.message : 'Failed to load preview');
+    }
+  };
+
   const refreshData = () => {
     if (!fileBuffer) return;
 
@@ -242,8 +271,8 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
       try {
         let rows: CSVRow[] = [];
         if (fileType === 'excel' && selectedSheet) {
-          const workbook = getWorkbook(fileBuffer);
-          rows = parseExcelSheet(workbook, selectedSheet, headerRow - 1);
+          const wb = workbook || getWorkbook(fileBuffer);
+          rows = parseExcelSheet(wb, selectedSheet, headerRow - 1);
         } else if (fileType === 'csv') {
           const text = new TextDecoder().decode(fileBuffer);
           // Note: CSV parser currently doesn't support header row skipping
@@ -415,9 +444,17 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
         {step === 'sheet-select' && (
           <div className="flex flex-col space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              This Excel file contains {availableSheets.length} sheets. Select which sheet to import:
+              {availableSheets.length === 1
+                ? 'This Excel file contains 1 sheet. Confirm the sheet to import:'
+                : `This Excel file contains ${availableSheets.length} sheets. Select which sheet to import:`}
             </p>
-            <Select value={selectedSheet} onValueChange={setSelectedSheet}>
+            <Select
+              value={selectedSheet}
+              onValueChange={(value) => {
+                setSelectedSheet(value);
+                updateSheetPreview(value);
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select a sheet..." />
               </SelectTrigger>
@@ -429,6 +466,46 @@ export function ImportDialog({ open: isOpen, onOpenChange }: ImportDialogProps) 
                 ))}
               </SelectContent>
             </Select>
+
+            {/* Sheet Preview */}
+            {previewError && (
+              <div className="text-sm text-muted-foreground p-4 bg-muted/20 rounded-md border">
+                {previewError}
+              </div>
+            )}
+
+            {sheetPreview && sheetPreview.headers.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Showing first {sheetPreview.headers.length} columns
+                </p>
+                <div className="border rounded-md overflow-auto max-h-64">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {sheetPreview.headers.map((header, i) => (
+                          <TableHead key={i} className="text-xs font-medium">
+                            {header || `(Column ${i + 1})`}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sheetPreview.rows.map((row, rowIndex) => (
+                        <TableRow key={rowIndex}>
+                          {sheetPreview.headers.map((_, colIndex) => (
+                            <TableCell key={colIndex} className="text-xs font-mono py-2">
+                              {row[colIndex] ?? ''}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between pt-4">
               <Button variant="outline" onClick={() => setStep('upload')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />

@@ -120,3 +120,135 @@ export function parseExcelSheet(buffer: Uint8Array | XLSX.WorkBook, sheetName: s
     throw new Error(`Failed to parse Excel sheet "${sheetName}": ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
+
+/**
+ * Preview of an Excel sheet (headers + sample rows)
+ */
+export interface ExcelSheetPreview {
+  headers: string[];
+  rows: string[][];
+  totalColumns: number;
+}
+
+/**
+ * Normalize headers to be unique and non-empty
+ * @internal
+ */
+function normalizeHeaders(headers: unknown[]): string[] {
+  const normalized: string[] = [];
+  const seen = new Map<string, number>();
+
+  for (let i = 0; i < headers.length; i++) {
+    let header = String(headers[i] || '').trim();
+
+    if (!header) {
+      header = `Column ${i + 1}`;
+    }
+
+    // Handle duplicates
+    if (seen.has(header)) {
+      const count = seen.get(header)! + 1;
+      seen.set(header, count);
+      header = `${header}_${count}`;
+    } else {
+      seen.set(header, 1);
+    }
+
+    normalized.push(header);
+  }
+
+  return normalized;
+}
+
+/**
+ * Get a preview of an Excel sheet (headers + top N rows)
+ * Does not convert the entire sheet, only reads the required range
+ *
+ * @param buffer - Uint8Array from file picker or a pre-read workbook
+ * @param sheetName - Name of the sheet to preview
+ * @param headerRowIndex - Zero-based index of the header row (default: 0)
+ * @param maxDataRows - Maximum number of data rows to return (default: 5)
+ * @param maxColumns - Maximum number of columns to return (default: 20)
+ * @returns ExcelSheetPreview with headers and sample rows
+ */
+export function getExcelSheetPreview(
+  buffer: Uint8Array | XLSX.WorkBook,
+  sheetName: string,
+  headerRowIndex = 0,
+  maxDataRows = 5,
+  maxColumns = 20
+): ExcelSheetPreview {
+  // Read workbook if buffer is provided
+  const workbook = buffer instanceof Uint8Array ? getWorkbook(buffer) : buffer;
+
+  // Get sheet
+  const sheet = workbook.Sheets[sheetName];
+  if (!sheet) {
+    throw new Error(`Sheet "${sheetName}" not found in Excel file`);
+  }
+
+  // Handle empty sheet (no range defined)
+  if (!sheet['!ref']) {
+    return { headers: [], rows: [], totalColumns: 0 };
+  }
+
+  // Decode the range to get dimensions
+  const range = XLSX.utils.decode_range(sheet['!ref']);
+  const lastRow = range.e.r;
+  const lastCol = range.e.c;
+
+  // Compute preview range
+  const startRow = Math.max(0, Math.min(headerRowIndex, lastRow));
+  const endRow = Math.min(startRow + maxDataRows, lastRow);
+  const endCol = Math.min(lastCol, maxColumns - 1);
+
+  // Encode the preview range
+  const previewRange = XLSX.utils.encode_range({
+    s: { r: startRow, c: 0 },
+    e: { r: endRow, c: endCol }
+  });
+
+  // Convert to array of arrays
+  const rawData = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+    header: 1,
+    defval: '',
+    raw: false,
+    blankrows: false,
+    range: previewRange
+  });
+
+  // Handle empty data
+  if (!rawData || rawData.length === 0) {
+    return { headers: [], rows: [], totalColumns: 0 };
+  }
+
+  // First row is headers
+  const rawHeaders = rawData[0];
+  if (!Array.isArray(rawHeaders)) {
+    return { headers: [], rows: [], totalColumns: 0 };
+  }
+
+  const headers = normalizeHeaders(rawHeaders);
+
+  // Extract data rows (skip header row)
+  const rows: string[][] = [];
+  for (let i = 1; i < rawData.length; i++) {
+    const dataRow = rawData[i];
+    if (!Array.isArray(dataRow)) continue;
+
+    // Ensure row has same length as headers
+    const row: string[] = [];
+    for (let colIndex = 0; colIndex < headers.length; colIndex++) {
+      const value = dataRow[colIndex];
+      row.push(String(value !== undefined && value !== null ? value : '').trim());
+    }
+
+    rows.push(row);
+  }
+
+  return {
+    headers,
+    rows,
+    totalColumns: headers.length
+  };
+}

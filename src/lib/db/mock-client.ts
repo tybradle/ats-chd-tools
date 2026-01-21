@@ -168,7 +168,7 @@ if (!loadFromStorage()) {
     ];
 
     for (let i = 1; i <= count; i++) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+       
       const comp = components[(i - 1) % components.length];
       const itemId = store.ids.items++;
       store.items.set(itemId, {
