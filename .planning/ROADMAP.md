@@ -16,14 +16,17 @@ ATS CHD Tools is an offline-first Windows desktop platform (Tauri + React + SQLi
 
 **Requirements:** PROJ-01, PROJ-02, PROJ-03, PROJ-04, PROJ-05, APP-01
 
-**Plans:** 5 plans
+**Plans:** 8 plans (7 complete)
 
 Plans:
-- [ ] 01-01-PLAN.md — Add SQLite migration for Project(job#) → Packages and preserve scope IDs
-- [ ] 01-02-PLAN.md — Add DB helpers + types for job projects and packages (real + mock)
-- [ ] 01-03-PLAN.md — Refactor BOM Zustand store to be package-scope-first
-- [ ] 01-04-PLAN.md — Landing tiles + BOM routing + blocking modal wiring
-- [ ] 01-05-PLAN.md — ProjectManagerDialog CRUD UI + inline uniqueness errors + checkpoint
+- [x] 01-01-PLAN.md — Add SQLite migration for Project(job#) → Packages and preserve scope IDs
+- [x] 01-02-PLAN.md — Add DB helpers + types for job projects and packages (real + mock)
+- [x] 01-03-PLAN.md — Refactor BOM Zustand store to be package-scope-first
+- [x] 01-04-PLAN.md — Landing tiles + BOM routing + blocking modal wiring
+- [x] 01-05-PLAN.md — ProjectManagerDialog CRUD UI + inline uniqueness errors + checkpoint
+- [x] 01-06-PLAN.md — Gap closure: enforce truly blocking BOM entry modal in all BomPage branches
+- [ ] 01-07-PLAN.md — Gap closure: fix flushPendingWrites hang so scope switching cannot deadlock
+- [ ] 01-08-PLAN.md — Gap closure: human verification of BOM entry gating + scope switching stability
 
 **Success Criteria (observable):**
 1. Landing page shows module tiles; non-ready modules are disabled and labeled “Coming soon”.
@@ -87,7 +90,7 @@ Plans:
 
 | Phase | Name | Status |
 |------:|------|--------|
-| 1 | Project/Package Scoping + Entry UX | Planned |
+| 1 | Project/Package Scoping + Entry UX | In Progress (7/8 plans complete) |
 | 2 | BOM Translation Release Rails | Planned |
 | 3 | Backup / Restore / Merge | Planned |
 | 4 | Settings + UNC Updater | Planned |
