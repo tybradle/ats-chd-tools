@@ -25,3 +25,4 @@ tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio"] }
+chrono = "0.4"

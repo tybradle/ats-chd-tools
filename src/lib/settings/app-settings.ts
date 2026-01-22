@@ -21,6 +21,8 @@ const KEYS = {
   UI_THEME: 'ui.theme',
   PROMPTS_ALWAYS_ASK_BACKUP: 'prompts.alwaysAsk.backup',
   PATHS_LAST_BACKUP: 'paths.last.backup',
+  PROMPTS_ALWAYS_ASK_RESTORE: 'prompts.alwaysAsk.restore',
+  PATHS_LAST_RESTORE: 'paths.last.restore',
 } as const;
 
 // ============================================
@@ -31,6 +33,8 @@ const DEFAULTS = {
   [KEYS.UI_THEME]: 'system' as UiTheme,
   [KEYS.PROMPTS_ALWAYS_ASK_BACKUP]: 'true',
   [KEYS.PATHS_LAST_BACKUP]: '',
+  [KEYS.PROMPTS_ALWAYS_ASK_RESTORE]: 'true',
+  [KEYS.PATHS_LAST_RESTORE]: '',
 };
 
 // ============================================
@@ -134,4 +138,32 @@ export async function getLastBackupPath(): Promise<string> {
  */
 export async function setLastBackupPath(path: string): Promise<void> {
   await setString(KEYS.PATHS_LAST_BACKUP, path);
+}
+
+/**
+ * Get the "always ask before restore" setting
+ */
+export async function getAlwaysAskRestore(): Promise<boolean> {
+  return getBool(KEYS.PROMPTS_ALWAYS_ASK_RESTORE, true);
+}
+
+/**
+ * Set the "always ask before restore" setting
+ */
+export async function setAlwaysAskRestore(value: boolean): Promise<void> {
+  await setBool(KEYS.PROMPTS_ALWAYS_ASK_RESTORE, value);
+}
+
+/**
+ * Get the last restore path used
+ */
+export async function getLastRestorePath(): Promise<string> {
+  return getString(KEYS.PATHS_LAST_RESTORE, '');
+}
+
+/**
+ * Set the last restore path used
+ */
+export async function setLastRestorePath(path: string): Promise<void> {
+  await setString(KEYS.PATHS_LAST_RESTORE, path);
 }

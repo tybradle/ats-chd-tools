@@ -48,3 +48,61 @@ pub async fn backup_database(app_handle: AppHandle, to_path: String) -> Result<(
 
     Ok(())
 }
+
+/// Restore the database from a user-selected SQLite file
+///
+/// This command:
+/// 1. Creates a timestamped backup of the existing database (.bak)
+/// 2. Copies the selected file to the database location
+/// 3. Cleans up WAL and SHM files
+#[tauri::command]
+pub async fn restore_database(app_handle: AppHandle, from_path: String) -> Result<(), String> {
+    // Get the database path from the app config
+    let db_dir = app_handle
+        .path()
+        .app_local_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {}", e))?;
+    
+    let db_path = db_dir.join("ats-chd-tools.db");
+
+    // Verify source file exists
+    let source = std::path::Path::new(&from_path);
+    if !source.exists() {
+        return Err(format!(
+            "Source file not found: {}",
+            from_path
+        ));
+    }
+
+    // Create timestamped backup of existing database if it exists
+    if db_path.exists() {
+        let timestamp = chrono::Utc::now().format("%Y%m%d-%H%M%S");
+        let backup_path = db_dir.join(format!("ats-chd-tools.db.bak-{}", timestamp));
+        
+        std::fs::rename(&db_path, &backup_path)
+            .map_err(|e| format!("Failed to backup existing database: {}", e))?;
+    }
+
+    // Copy source file to database location
+    std::fs::copy(source, &db_path)
+        .map_err(|e| format!("Failed to copy database file: {}", e))?;
+
+    // Remove WAL and SHM files if they exist
+    let wal_path = db_dir.join("ats-chd-tools.db-wal");
+    let shm_path = db_dir.join("ats-chd-tools.db-shm");
+
+    if wal_path.exists() {
+        let _ = std::fs::remove_file(&wal_path);
+    }
+    if shm_path.exists() {
+        let _ = std::fs::remove_file(&shm_path);
+    }
+
+    Ok(())
+}
+
+/// Exit the application
+#[tauri::command]
+pub fn exit_app() {
+    std::process::exit(0);
+}

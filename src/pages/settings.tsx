@@ -4,11 +4,12 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { invoke } from '@tauri-apps/api/core';
-import { save } from '@tauri-apps/plugin-dialog';
-import { isTauri } from '@/lib/db/client';
+import { save, open } from '@tauri-apps/plugin-dialog';
+import { isTauri, closeDb } from '@/lib/db/client';
 import * as appSettings from '@/lib/settings/app-settings';
 
 export function SettingsPage() {
@@ -17,18 +18,30 @@ export function SettingsPage() {
   const [lastBackupPath, setLastBackupPath] = useState('');
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [appVersion, setAppVersion] = useState('');
+  
+  // Restore state
+  const [alwaysAskRestore, setAlwaysAskRestore] = useState(true);
+  const [lastRestorePath, setLastRestorePath] = useState('');
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
+  const [restoreConfirmText, setRestoreConfirmText] = useState('');
+  const [pendingRestorePath, setPendingRestorePath] = useState<string | null>(null);
 
   // Load settings on mount
   useEffect(() => {
     const loadSettings = async () => {
-      const [alwaysAsk, lastPath, theme] = await Promise.all([
+      const [alwaysAskBackup, lastPathBackup, alwaysAskRestore, lastPathRestore, theme] = await Promise.all([
         appSettings.getAlwaysAskBackup(),
         appSettings.getLastBackupPath(),
+        appSettings.getAlwaysAskRestore(),
+        appSettings.getLastRestorePath(),
         appSettings.getUiTheme(),
       ]);
 
-      setAlwaysAskBackup(alwaysAsk);
-      setLastBackupPath(lastPath);
+      setAlwaysAskBackup(alwaysAskBackup);
+      setLastBackupPath(lastPathBackup);
+      setAlwaysAskRestore(alwaysAskRestore);
+      setLastRestorePath(lastPathRestore);
 
       // Sync theme with next-themes
       setTheme(theme);
@@ -66,6 +79,11 @@ export function SettingsPage() {
   const handleAlwaysAskChange = async (checked: boolean) => {
     setAlwaysAskBackup(checked);
     await appSettings.setAlwaysAskBackup(checked);
+  };
+
+  const handleAlwaysAskRestoreChange = async (checked: boolean) => {
+    setAlwaysAskRestore(checked);
+    await appSettings.setAlwaysAskRestore(checked);
   };
 
   const handleBackup = async () => {
@@ -132,6 +150,100 @@ export function SettingsPage() {
       toast.error(`Backup failed: ${error}`);
     } finally {
       setIsBackingUp(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    if (!isTauri) {
+      toast.error('Restore is only available in the desktop app');
+      return;
+    }
+
+    try {
+      setIsRestoring(true);
+
+      let filePath: string | null = null;
+
+      if (alwaysAskRestore) {
+        // Open file dialog
+        filePath = await open({
+          multiple: false,
+          title: 'Select Database File to Restore',
+          filters: [{
+            name: 'SQLite Database',
+            extensions: ['sqlite', 'db']
+          }]
+        });
+      } else if (lastRestorePath) {
+        // Use last path - but we still need to pick the file
+        // For simplicity, we'll still show dialog but default to that directory
+        filePath = await open({
+          multiple: false,
+          title: 'Select Database File to Restore',
+          filters: [{
+            name: 'SQLite Database',
+            extensions: ['sqlite', 'db']
+          }]
+        });
+      } else {
+        // Fallback to dialog if no last path
+        filePath = await open({
+          multiple: false,
+          title: 'Select Database File to Restore',
+          filters: [{
+            name: 'SQLite Database',
+            extensions: ['sqlite', 'db']
+          }]
+        });
+      }
+
+      if (!filePath || Array.isArray(filePath)) {
+        // User cancelled or invalid selection
+        setIsRestoring(false);
+        return;
+      }
+
+      // Store the path for confirmation dialog
+      setPendingRestorePath(filePath);
+      setRestoreConfirmText('');
+      setRestoreConfirmOpen(true);
+      setIsRestoring(false);
+    } catch (error) {
+      console.error('Restore file selection failed:', error);
+      toast.error(`Failed to select file: ${error}`);
+      setIsRestoring(false);
+    }
+  };
+
+  const confirmRestore = async () => {
+    if (!pendingRestorePath) return;
+
+    try {
+      setIsRestoring(true);
+
+      // Close database connection before restore
+      await closeDb();
+
+      // Execute restore
+      await invoke('restore_database', { fromPath: pendingRestorePath });
+
+      // Update last restore path (store directory only)
+      const pathObj = pendingRestorePath;
+      const lastSlashIndex = Math.max(pathObj.lastIndexOf('/'), pathObj.lastIndexOf('\\'));
+      const dirPath = lastSlashIndex >= 0 ? pathObj.slice(0, lastSlashIndex) : pathObj;
+      await appSettings.setLastRestorePath(dirPath);
+      setLastRestorePath(dirPath);
+
+      toast.success('Database restored successfully. Application will now exit.');
+
+      // Exit the app after a short delay to allow toast to show
+      setTimeout(async () => {
+        await invoke('exit_app');
+      }, 1500);
+    } catch (error) {
+      console.error('Restore failed:', error);
+      toast.error(`Restore failed: ${error}`);
+      setIsRestoring(false);
     }
   };
 
@@ -215,6 +327,80 @@ export function SettingsPage() {
             {lastBackupPath && isTauri && (
               <p className="text-sm text-muted-foreground">
                 Last backup location: {lastBackupPath}
+              </p>
+            )}
+          </div>
+
+          <div className="border-t pt-4">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="always-ask-restore"
+                  checked={alwaysAskRestore}
+                  onCheckedChange={(checked) => handleAlwaysAskRestoreChange(checked === true)}
+                />
+                <Label htmlFor="always-ask-restore" className="cursor-pointer">
+                  Always ask where to pick restore file
+                </Label>
+              </div>
+              <p className="text-sm text-muted-foreground ml-6">
+                When enabled, you'll be prompted to choose a restore file each time.
+              </p>
+            </div>
+
+            <AlertDialog open={restoreConfirmOpen} onOpenChange={setRestoreConfirmOpen}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  onClick={handleRestore}
+                  disabled={isRestoring || !isTauri}
+                  variant="destructive"
+                  className="w-full sm:w-auto"
+                >
+                  {isRestoring ? 'Restoring...' : 'Restore database...'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirm Database Restore</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action will <strong>replace</strong> your current database with the selected file.
+                    The current database will be backed up as <code>.bak</code> file first.
+                    <br /><br />
+                    <strong>Warning:</strong> The application will exit immediately after restore.
+                    <br /><br />
+                    To confirm, type <span className="font-mono bg-muted px-1 rounded">RESTORE</span> below:
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="py-4">
+                  <input
+                    type="text"
+                    value={restoreConfirmText}
+                    onChange={(e) => setRestoreConfirmText(e.target.value)}
+                    placeholder="Type RESTORE to confirm"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-destructive"
+                  />
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isRestoring}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={confirmRestore}
+                    disabled={restoreConfirmText !== 'RESTORE' || isRestoring}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isRestoring ? 'Restoring...' : 'Restore and Exit'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            {!isTauri && (
+              <p className="text-sm text-muted-foreground">
+                Restore is only available in the desktop app.
+              </p>
+            )}
+            {lastRestorePath && isTauri && (
+              <p className="text-sm text-muted-foreground">
+                Last restore location: {lastRestorePath}
               </p>
             )}
           </div>
