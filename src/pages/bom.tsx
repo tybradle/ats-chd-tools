@@ -84,6 +84,7 @@ export function BomPage() {
               open={isProjectManagerOpen}
               onOpenChange={handleOpenChange}
               onSelectPackage={handleSelectPackage}
+              onCancel={() => navigate('/')}
             />
             
             {!isProjectManagerOpen && (
@@ -134,6 +135,7 @@ export function BomPage() {
         open={isProjectManagerOpen}
         onOpenChange={handleOpenChange}
         onSelectPackage={handleSelectPackage}
+        onCancel={() => navigate('/')}
       />
     </div>
   );

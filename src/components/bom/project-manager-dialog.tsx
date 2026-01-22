@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, FolderOpen, Pencil } from 'lucide-react';
+import { Plus, Trash2, FolderOpen, Pencil, X } from 'lucide-react';
 import { useBOMStore } from '@/stores/bom-store';
 import { toast } from 'sonner';
 import {
@@ -67,6 +67,7 @@ interface ProjectManagerDialogProps {
   onOpenChange: (open: boolean) => void;
   onSelectProject?: (projectId: number) => void;
   onSelectPackage?: (packageId: number) => void;
+  onCancel?: () => void;
 }
 
 export function ProjectManagerDialog({
@@ -74,6 +75,7 @@ export function ProjectManagerDialog({
   onOpenChange,
   onSelectProject,
   onSelectPackage,
+  onCancel,
 }: ProjectManagerDialogProps) {
   const {
     jobProjects,
@@ -286,13 +288,29 @@ export function ProjectManagerDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>Project Manager</DialogTitle>
             <DialogDescription>
               Create and manage Job Projects and Packages. Select a Package to begin working.
             </DialogDescription>
           </DialogHeader>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4"
+            onClick={() => {
+              if (onCancel) {
+                onCancel();
+                return;
+              }
+              onOpenChange(false);
+            }}
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Cancel</span>
+          </Button>
 
           <div className="space-y-4">
             <div className="flex justify-between items-center">
