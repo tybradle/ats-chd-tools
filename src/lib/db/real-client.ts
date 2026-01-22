@@ -93,6 +93,10 @@ export const manufacturers = {
     query<Manufacturer>("SELECT * FROM manufacturers WHERE id = ?", [id])
       .then(rows => rows[0] ?? null),
   
+  getByName: (name: string) =>
+    query<Manufacturer>("SELECT * FROM manufacturers WHERE LOWER(name) = LOWER(?) LIMIT 1", [name])
+      .then(rows => rows[0] ?? null),
+  
   create: (name: string, code?: string) =>
     execute("INSERT INTO manufacturers (name, code) VALUES (?, ?)", [name, code ?? null]),
   
@@ -109,6 +113,10 @@ export const categories = {
   
   getById: (id: number) =>
     query<Category>("SELECT * FROM categories WHERE id = ?", [id])
+      .then(rows => rows[0] ?? null),
+  
+  getByName: (name: string) =>
+    query<Category>("SELECT * FROM categories WHERE LOWER(name) = LOWER(?) LIMIT 1", [name])
       .then(rows => rows[0] ?? null),
   
   getByParent: (parentId: number | null) =>
@@ -155,6 +163,13 @@ export const parts = {
       LEFT JOIN categories c ON p.category_id = c.id
       WHERE p.id = ?
     `, [id]).then(rows => rows[0] ?? null),
+  
+  getByKey: (partNumber: string, manufacturerId: number) =>
+    query<Part>(`
+      SELECT * FROM parts 
+      WHERE part_number = ? AND manufacturer_id = ? 
+      LIMIT 1
+    `, [partNumber, manufacturerId]).then(rows => rows[0] ?? null),
   
   search: (term: string, limit = 50) =>
     query<PartWithManufacturer>(`

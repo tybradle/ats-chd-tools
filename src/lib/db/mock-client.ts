@@ -236,6 +236,11 @@ export interface Setting {
 export const manufacturers = {
   getAll: async () => { await mockDelay(); return Array.from(store.manufacturers.values()); },
   getById: async (id: number) => { await mockDelay(); return store.manufacturers.get(id) || null; },
+  getByName: async (name: string) => {
+    await mockDelay();
+    const lowerName = name.toLowerCase();
+    return Array.from(store.manufacturers.values()).find((m: any) => m.name.toLowerCase() === lowerName) || null;
+  },
   create: async (name: string, code?: string) => {
     await mockDelay();
     const id = store.ids.manufacturers++;
@@ -263,6 +268,11 @@ export const manufacturers = {
 export const categories = {
   getAll: async () => { await mockDelay(); return Array.from(store.categories.values()); },
   getById: async (id: number) => { await mockDelay(); return store.categories.get(id) || null; },
+  getByName: async (name: string) => {
+    await mockDelay();
+    const lowerName = name.toLowerCase();
+    return Array.from(store.categories.values()).find((c: any) => c.name.toLowerCase() === lowerName) || null;
+  },
   getByParent: async (parentId: number | null) => {
     await mockDelay();
     return Array.from(store.categories.values()).filter((c: any) => c.parent_id === parentId);
@@ -294,6 +304,13 @@ export const categories = {
 export const parts = {
   getAll: async () => { await mockDelay(); return Array.from(store.parts.values()); },
   getById: async (id: number) => { await mockDelay(); return store.parts.get(id) || null; },
+  getByKey: async (partNumber: string, manufacturerId: number) => {
+    await mockDelay();
+    const lowerPN = partNumber.toLowerCase();
+    return Array.from(store.parts.values()).find((p: any) =>
+      p.part_number.toLowerCase() === lowerPN && p.manufacturer_id === manufacturerId
+    ) || null;
+  },
   search: async (term: string, limit = 50) => {
     await mockDelay();
     const lowerTerm = term.toLowerCase().replace('*', '');

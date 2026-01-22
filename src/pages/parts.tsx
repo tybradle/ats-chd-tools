@@ -2,15 +2,19 @@ import { useEffect, useState } from "react";
 import { usePartsStore } from "@/stores/parts-store";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Import, Download } from "lucide-react";
 import { PartsTable } from "@/components/parts/parts-table";
 import { PartDialog } from "@/components/parts/part-dialog";
+import { PartsImportDialog } from "@/components/parts/parts-import-dialog";
+import { PartsExportDialog } from "@/components/parts/parts-export-dialog";
 import type { PartWithManufacturer } from "@/types/parts";
 
 export function PartsPage() {
-  const { loadInitialData } = usePartsStore();
+  const { parts, loadInitialData } = usePartsStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [partToEdit, setPartToEdit] = useState<PartWithManufacturer | null>(null);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -26,6 +30,10 @@ export function PartsPage() {
     setIsDialogOpen(true);
   };
 
+  const handleImported = () => {
+    loadInitialData();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -35,10 +43,20 @@ export function PartsPage() {
             Manage your master parts database.
           </p>
         </div>
-        <Button onClick={handleCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Part
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsImportDialogOpen(true)}>
+            <Import className="h-4 w-4 mr-2" />
+            Import
+          </Button>
+          <Button variant="outline" onClick={() => setIsExportDialogOpen(true)}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button onClick={handleCreate}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Part
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -57,6 +75,18 @@ export function PartsPage() {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         partToEdit={partToEdit}
+      />
+
+      <PartsImportDialog
+        open={isImportDialogOpen}
+        onOpenChange={setIsImportDialogOpen}
+        onImported={handleImported}
+      />
+
+      <PartsExportDialog
+        open={isExportDialogOpen}
+        onOpenChange={setIsExportDialogOpen}
+        parts={parts}
       />
     </div>
   );
