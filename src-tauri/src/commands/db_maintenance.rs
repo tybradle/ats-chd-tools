@@ -53,15 +53,26 @@ pub async fn backup_database(app_handle: AppHandle, to_path: String) -> Result<(
 
     pool.close().await;
 
-    // Rename temp file to final path (atomic)
-    std::fs::rename(&temp_path, &to_path)
-        .map_err(|e| {
-            // Clean up temp file on failure
+    // Rename temp file to final path (atomic on same filesystem)
+    match std::fs::rename(&temp_path, &to_path) {
+        Ok(_) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::CrossesDevices => {
+            // Fallback for cross-volume moves: copy then delete
+            std::fs::copy(&temp_path, &to_path)
+                .map_err(|e| {
+                    let _ = std::fs::remove_file(&temp_path);
+                    format!("Failed to copy backup file across devices: {}", e)
+                })?;
+            std::fs::remove_file(&temp_path)
+                .map_err(|e| format!("Failed to remove temporary file: {}", e))?;
+            Ok(())
+        }
+        Err(e) => {
+            // Clean up temp file on any other error
             let _ = std::fs::remove_file(&temp_path);
-            format!("Failed to finalize backup file: {}", e)
-        })?;
-
-    Ok(())
+            Err(format!("Failed to finalize backup file: {}", e))
+        }
+    }
 }
 
 /// Restore the database from a user-selected SQLite file
