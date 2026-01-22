@@ -274,7 +274,7 @@ export function PartsImportDialog({ open: isOpen, onOpenChange, onImported }: Pa
     setImporting(true);
 
     try {
-      const result = await importPartsFromRows(csvData, mapping);
+      const result = await importPartsFromRows(csvData, mapping, headers);
 
       if (result.errors.length > 0) {
         toast.error(`Import completed with ${result.errors.length} errors`);

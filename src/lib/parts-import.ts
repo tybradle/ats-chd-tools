@@ -30,7 +30,8 @@ function normalizeValue(value: unknown): string {
  */
 export async function importPartsFromRows(
   rows: CSVRow[],
-  mapping: PartsColumnMapping
+  mapping: PartsColumnMapping,
+  headers: string[]
 ): Promise<PartsImportResult> {
   const result: PartsImportResult = {
     created: 0,
@@ -63,7 +64,7 @@ export async function importPartsFromRows(
     try {
       // Extract manufacturer
       const manufacturerRaw = mapping.manufacturer !== undefined
-        ? normalizeValue(row[Object.keys(row)[mapping.manufacturer]])
+        ? normalizeValue(row[headers[mapping.manufacturer]])
         : '';
 
       if (!manufacturerRaw) {
@@ -76,22 +77,34 @@ export async function importPartsFromRows(
       const manufacturerLower = manufacturerRaw.toLowerCase();
       let manufacturerId = manufacturerMap.get(manufacturerLower);
 
-      if (!manufacturerId) {
-        // Auto-create manufacturer
-        const createResult = await manufacturers.create(manufacturerRaw);
-        manufacturerId = createResult.lastInsertId;
+       if (!manufacturerId) {
+         // Auto-create manufacturer
+         try {
+           const createResult = await manufacturers.create(manufacturerRaw);
+           manufacturerId = createResult.lastInsertId;
 
-        // Reload to get the created manufacturer
-        const newMfr = await manufacturers.getByName(manufacturerRaw);
-        if (newMfr) {
-          manufacturerMap.set(newMfr.name.toLowerCase(), newMfr.id);
-          manufacturerId = newMfr.id;
-        }
-      }
+           // Reload to get the created manufacturer
+           const newMfr = await manufacturers.getByName(manufacturerRaw);
+           if (newMfr) {
+             manufacturerMap.set(newMfr.name.toLowerCase(), newMfr.id);
+             manufacturerId = newMfr.id;
+           }
+         } catch (error) {
+           // Handle UNIQUE constraint collision - manufacturer already exists
+           const existingMfr = await manufacturers.getByName(manufacturerRaw);
+           if (existingMfr) {
+             manufacturerMap.set(existingMfr.name.toLowerCase(), existingMfr.id);
+             manufacturerId = existingMfr.id;
+           } else {
+             // Re-throw if it's not a UNIQUE constraint issue
+             throw error;
+           }
+         }
+       }
 
       // Extract part number
       const partNumber = mapping.partNumber !== undefined
-        ? normalizeValue(row[Object.keys(row)[mapping.partNumber]])
+        ? normalizeValue(row[headers[mapping.partNumber]])
         : '';
 
       if (!partNumber) {
@@ -102,27 +115,31 @@ export async function importPartsFromRows(
 
       // Extract optional fields
       const description = mapping.description !== undefined
-        ? normalizeValue(row[Object.keys(row)[mapping.description]])
+        ? normalizeValue(row[headers[mapping.description]])
         : '';
 
       const secondaryDescription = mapping.secondaryDescription !== undefined
-        ? normalizeValue(row[Object.keys(row)[mapping.secondaryDescription]])
+        ? normalizeValue(row[headers[mapping.secondaryDescription]])
         : '';
 
       const unit = mapping.unit !== undefined
-        ? normalizeValue(row[Object.keys(row)[mapping.unit]])
+        ? normalizeValue(row[headers[mapping.unit]])
         : '';
 
       const categoryRaw = mapping.category !== undefined
-        ? normalizeValue(row[Object.keys(row)[mapping.category]])
+        ? normalizeValue(row[headers[mapping.category]])
         : '';
 
-      let categoryId: number | null = null;
-      if (categoryRaw) {
-        const categoryLower = categoryRaw.toLowerCase();
-        categoryId = categoryMap.get(categoryLower) ?? null;
-        // If category not found, silently skip (categoryId stays null)
-      }
+       let categoryId: number | null = null;
+       if (categoryRaw) {
+         const categoryLower = categoryRaw.toLowerCase();
+         categoryId = categoryMap.get(categoryLower) ?? null;
+         // If category not found, silently skip (categoryId stays null)
+         // Only set categoryId if both categoryRaw is non-empty AND category exists
+         if (!categoryId) {
+           categoryId = null; // Explicitly set to null when category doesn't exist
+         }
+       }
 
       // Check if part exists (duplicate detection)
       const existingPart = await parts.getByKey(partNumber, manufacturerId!);
@@ -138,11 +155,12 @@ export async function importPartsFromRows(
           unit?: string;
         } = {};
 
-        // Only update non-empty fields
-        if (description) updates.description = description;
-        if (secondaryDescription) updates.secondary_description = secondaryDescription || null;
-        if (unit) updates.unit = unit;
-        if (categoryId !== undefined) updates.category_id = categoryId;
+         // Only update non-empty fields
+         if (description) updates.description = description;
+         if (secondaryDescription) updates.secondary_description = secondaryDescription || null;
+         if (unit) updates.unit = unit;
+         // Only set category_id when category cell is non-empty AND category exists
+         if (categoryRaw && categoryId !== null) updates.category_id = categoryId;
 
         // Only call update if there are changes
         if (Object.keys(updates).length > 0) {

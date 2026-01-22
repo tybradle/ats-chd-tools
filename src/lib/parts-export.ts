@@ -42,7 +42,7 @@ export function generatePartsCSV(parts: PartWithManufacturer[]): string {
         })
         .join(',')
     )
-    .join('\n');
+    .join('\r\n');
 }
 
 /**
