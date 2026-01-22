@@ -468,6 +468,17 @@ export const bomPackages = {
       saveToStorage();
     }
     return { rowsAffected: deleted ? 1 : 0, lastInsertId: undefined };
+  },
+  bulkCreate: async (packages: any[]) => {
+    await mockDelay();
+    const results: Array<{ rowsAffected: number; lastInsertId: number | undefined }> = [];
+    for (const pkg of packages) {
+      const id = store.ids.packages++;
+      store.packages.set(id, { ...pkg, id, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+      results.push({ rowsAffected: 1, lastInsertId: id });
+    }
+    saveToStorage();
+    return results;
   }
 };
 
@@ -588,6 +599,17 @@ export const bomLocations = {
     const deleted = store.locations.delete(id);
     if (deleted) saveToStorage();
     return { rowsAffected: deleted ? 1 : 0, lastInsertId: undefined };
+  },
+  bulkCreate: async (locations: any[]) => {
+    await mockDelay();
+    const results: Array<{ rowsAffected: number; lastInsertId: number | undefined }> = [];
+    for (const loc of locations) {
+      const id = store.ids.locations++;
+      store.locations.set(id, { ...loc, id, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+      results.push({ rowsAffected: 1, lastInsertId: id });
+    }
+    saveToStorage();
+    return results;
   }
 };
 

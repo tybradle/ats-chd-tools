@@ -345,6 +345,32 @@ export const bomPackages = {
 
   delete: (id: number) =>
     execute('DELETE FROM bom_packages WHERE id = ?', [id]),
+
+  bulkCreate: async (packages: Array<{ project_id: number; package_name: string; name: string | null; description: string | null; version: string; metadata: string | null }>) => {
+    if (packages.length === 0) return [];
+
+    const COLUMNS_PER_ROW = 6;
+    const SQLITE_MAX_PARAMS = 999;
+    const MAX_ROWS_PER_BATCH = Math.floor(SQLITE_MAX_PARAMS / COLUMNS_PER_ROW); // 166
+    const db = await getDb();
+    const results: Array<{ rowsAffected: number; lastInsertId: number | undefined }> = [];
+
+    for (let i = 0; i < packages.length; i += MAX_ROWS_PER_BATCH) {
+      const batch = packages.slice(i, Math.min(i + MAX_ROWS_PER_BATCH, packages.length));
+      const placeholders = batch.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
+      const values: unknown[] = [];
+      for (const pkg of batch) {
+        values.push(pkg.project_id, pkg.package_name, pkg.name, pkg.description, pkg.version, pkg.metadata);
+      }
+      await db.execute(
+        `INSERT INTO bom_packages (project_id, package_name, name, description, version, metadata) VALUES ${placeholders}`,
+        values
+      );
+      results.push({ rowsAffected: batch.length, lastInsertId: undefined });
+    }
+
+    return results;
+  },
 };
 
 // BOM Projects (legacy - deprecated, use bomPackages)
@@ -440,6 +466,32 @@ export const bomLocations = {
 
   delete: (id: number) =>
     execute('DELETE FROM bom_locations WHERE id = ?', [id]),
+
+  bulkCreate: async (locations: Array<{ project_id: number; name: string; export_name: string | null; sort_order: number }>) => {
+    if (locations.length === 0) return [];
+
+    const COLUMNS_PER_ROW = 4;
+    const SQLITE_MAX_PARAMS = 999;
+    const MAX_ROWS_PER_BATCH = Math.floor(SQLITE_MAX_PARAMS / COLUMNS_PER_ROW); // 249
+    const db = await getDb();
+    const results: Array<{ rowsAffected: number; lastInsertId: number | undefined }> = [];
+
+    for (let i = 0; i < locations.length; i += MAX_ROWS_PER_BATCH) {
+      const batch = locations.slice(i, Math.min(i + MAX_ROWS_PER_BATCH, locations.length));
+      const placeholders = batch.map(() => '(?, ?, ?, ?)').join(', ');
+      const values: unknown[] = [];
+      for (const loc of batch) {
+        values.push(loc.project_id, loc.name, loc.export_name, loc.sort_order);
+      }
+      await db.execute(
+        `INSERT INTO bom_locations (project_id, name, export_name, sort_order) VALUES ${placeholders}`,
+        values
+      );
+      results.push({ rowsAffected: batch.length, lastInsertId: undefined });
+    }
+
+    return results;
+  },
 };
 
 // BOM Items

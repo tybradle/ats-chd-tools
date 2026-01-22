@@ -23,9 +23,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, FolderOpen, Pencil, X } from 'lucide-react';
+import { Plus, Trash2, FolderOpen, Pencil, X, Share2, FileUp } from 'lucide-react';
 import { useBOMStore } from '@/stores/bom-store';
 import { toast } from 'sonner';
+import { exportJobProjectToFile, importJobProjectFromFile } from '@/lib/project-package-io';
+import { save } from '@tauri-apps/plugin-dialog';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { readFile, writeFile } from '@tauri-apps/plugin-fs';
+import { isTauri } from '@/lib/db/client';
+import { useRef, type ChangeEvent } from 'react';
 import {
   Form,
   FormControl,
@@ -99,6 +105,9 @@ export function ProjectManagerDialog({
   const [deleteConfirmProject, setDeleteConfirmProject] = useState<number | null>(null);
   const [deleteConfirmPackage, setDeleteConfirmPackage] = useState<number | null>(null);
   const [selectedJobProjectId, setSelectedJobProjectId] = useState<number | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Forms
   const createProjectForm = useForm<CreateProjectValues>({
@@ -285,6 +294,85 @@ export function ProjectManagerDialog({
     onOpenChange(false);
   };
 
+  // Export job project
+  const handleExportProject = async (jobProjectId: number) => {
+    setExporting(jobProjectId);
+    try {
+      const projectPackage = await exportJobProjectToFile(jobProjectId);
+      const content = JSON.stringify(projectPackage, null, 2);
+      const defaultFilename = `${projectPackage.job_project.project_number}.chdproj.json`;
+
+      if (isTauri) {
+        const path = await save({
+          defaultPath: defaultFilename,
+          filters: [{ name: 'Project Package', extensions: ['json'] }]
+        });
+        if (path) {
+          await writeFile(path, new TextEncoder().encode(content));
+          toast.success(`Exported to ${path}`);
+        }
+      } else {
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = defaultFilename;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success(`Downloaded ${defaultFilename}`);
+      }
+    } catch (error) {
+      toast.error('Export failed: ' + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  // Import job project
+  const handleImportProject = async (file?: File) => {
+    setImporting(true);
+    try {
+      let content: string;
+
+      if (isTauri) {
+        const selectedPath = await openDialog({
+          multiple: false,
+          filters: [{ name: 'Project Package', extensions: ['json'] }]
+        });
+        if (!selectedPath) {
+          setImporting(false);
+          return;
+        }
+        const data = await readFile(selectedPath);
+        content = new TextDecoder().decode(data);
+      } else {
+        if (!file) {
+          fileInputRef.current?.click();
+          setImporting(false);
+          return;
+        }
+        content = await file.text();
+      }
+
+      await importJobProjectFromFile(content);
+      await loadJobProjects();
+      toast.success('Project imported successfully');
+      onOpenChange(false);
+    } catch (error) {
+      toast.error('Import failed: ' + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  // Handle file input change (browser fallback)
+  const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImportProject(file);
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -318,11 +406,28 @@ export function ProjectManagerDialog({
                 <Label className="text-base font-medium">Projects ({jobProjects.length})</Label>
                 <p className="text-sm text-muted-foreground">Job #</p>
               </div>
-              <Button size="sm" onClick={() => setIsCreateProjectOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                New Project
-              </Button>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => handleImportProject()} disabled={importing}>
+                  <FileUp className="w-4 h-4 mr-2" />
+                  {importing ? 'Importing...' : 'Import Project'}
+                </Button>
+                <Button size="sm" onClick={() => setIsCreateProjectOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Project
+                </Button>
+              </div>
             </div>
+
+            {/* Hidden file input for browser import */}
+            {!isTauri && (
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleFileInputChange}
+                className="hidden"
+              />
+            )}
 
             {jobProjects.length === 0 ? (
               <div className="text-center py-8 border rounded-lg bg-muted/20">
@@ -343,38 +448,46 @@ export function ProjectManagerDialog({
                       const projectPackages = packages.filter(p => p.project_id === jp.id);
                       return (
                         <TableRow key={jp.id}>
-                          <TableCell className="font-medium">{jp.project_number}</TableCell>
-                          <TableCell>{projectPackages.length}</TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setSelectedJobProjectId(jp.id);
-                                loadPackages(jp.id);
-                              }}
-                            >
-                              <FolderOpen className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setSelectedJobProjectId(jp.id);
-                                renameProjectForm.setValue('project_number', jp.project_number);
-                                setIsRenameProjectOpen(true);
-                              }}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setDeleteConfirmProject(jp.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </TableCell>
+                           <TableCell className="font-medium">{jp.project_number}</TableCell>
+                           <TableCell>{projectPackages.length}</TableCell>
+                           <TableCell className="text-right">
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               onClick={() => {
+                                 setSelectedJobProjectId(jp.id);
+                                 loadPackages(jp.id);
+                               }}
+                             >
+                               <FolderOpen className="w-4 h-4" />
+                             </Button>
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               onClick={() => handleExportProject(jp.id)}
+                               disabled={exporting === jp.id}
+                             >
+                               <Share2 className="w-4 h-4" />
+                             </Button>
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               onClick={() => {
+                                 setSelectedJobProjectId(jp.id);
+                                 renameProjectForm.setValue('project_number', jp.project_number);
+                                 setIsRenameProjectOpen(true);
+                               }}
+                             >
+                               <Pencil className="w-4 h-4" />
+                             </Button>
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               onClick={() => setDeleteConfirmProject(jp.id)}
+                             >
+                               <Trash2 className="w-4 h-4" />
+                             </Button>
+                           </TableCell>
                         </TableRow>
                       );
                     })}
@@ -427,17 +540,17 @@ export function ProjectManagerDialog({
                             >
                               Open
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setSelectedJobProjectId(pkg.project_id);
-                                renamePackageForm.setValue('package_name', pkg.package_name);
-                                setIsRenamePackageOpen(true);
-                                // Store package ID in a ref or similar
-                                (renamePackageForm as any)._packageId = pkg.id;
-                              }}
-                            >
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedJobProjectId(pkg.project_id);
+                                  renamePackageForm.setValue('package_name', pkg.package_name);
+                                  setIsRenamePackageOpen(true);
+                                  // Store package ID in a ref or similar
+                                  (renamePackageForm as { _packageId?: number })._packageId = pkg.id;
+                                }}
+                              >
                               <Pencil className="w-4 h-4" />
                             </Button>
                             <Button
@@ -683,7 +796,7 @@ export function ProjectManagerDialog({
           <Form {...renamePackageForm}>
             <form onSubmit={(e) => {
               e.preventDefault();
-              const packageId = (renamePackageForm as any)._packageId;
+              const packageId = (renamePackageForm as { _packageId?: number })._packageId;
               if (packageId) {
                 renamePackageForm.handleSubmit((values) => handleRenamePackage(values, packageId))(e);
               }
