@@ -1,3 +1,5 @@
+mod commands;
+
 use tauri::Manager;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
@@ -60,6 +62,9 @@ pub fn run() {
             }
             Ok(())
         })
+        .invoke_handler(tauri::generate_handler![
+            commands::db_maintenance::backup_database
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
