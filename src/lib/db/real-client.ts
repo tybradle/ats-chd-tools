@@ -317,12 +317,13 @@ export const bomPackages = {
     packageName: string,
     name?: string,
     description?: string,
-    version = '1.0'
+    version = '1.0',
+    metadata?: string | null
   ) =>
     execute(
-      `INSERT INTO bom_packages (project_id, package_name, name, description, version)
-       VALUES (?, ?, ?, ?, ?)`,
-      [projectId, packageName, name ?? null, description ?? null, version]
+      `INSERT INTO bom_packages (project_id, package_name, name, description, version, metadata)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [projectId, packageName, name ?? null, description ?? null, version, metadata ?? null]
     ),
 
   update: (id: number, updates: Partial<Omit<BOMPackage, 'id' | 'created_at' | 'updated_at'>>) => {
@@ -449,11 +450,11 @@ export const bomLocations = {
     query<BOMLocation>('SELECT * FROM bom_locations WHERE id = ?', [id])
       .then(rows => rows[0] ?? null),
 
-  create: (projectId: number, name: string, exportName?: string) =>
+  create: (projectId: number, name: string, exportName?: string, sortOrder?: number) =>
     execute(
-      `INSERT INTO bom_locations (project_id, name, export_name)
-       VALUES (?, ?, ?)`,
-      [projectId, name, exportName ?? null]
+      `INSERT INTO bom_locations (project_id, name, export_name, sort_order)
+       VALUES (?, ?, ?, ?)`,
+      [projectId, name, exportName ?? null, sortOrder ?? null]
     ),
 
   update: (id: number, name: string, exportName?: string | null) =>

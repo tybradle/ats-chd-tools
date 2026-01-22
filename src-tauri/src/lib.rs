@@ -64,8 +64,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::db_maintenance::backup_database,
-            commands::db_maintenance::restore_database,
-            commands::db_maintenance::exit_app
+            commands::db_maintenance::restore_database
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

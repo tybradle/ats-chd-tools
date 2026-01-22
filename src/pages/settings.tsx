@@ -57,9 +57,8 @@ export function SettingsPage() {
           const version = await getVersion();
           setAppVersion(version);
         } else {
-          // From package.json in browser mode
-          const pkg = await import('../../package.json');
-          setAppVersion(pkg.version);
+          // From vite define in browser mode
+          setAppVersion(__APP_VERSION__);
         }
       } catch (e) {
         console.warn('Failed to load app version:', e);
@@ -94,6 +93,9 @@ export function SettingsPage() {
 
     try {
       setIsBackingUp(true);
+
+      // Close database connection before backup
+      await closeDb();
 
       // Generate default filename with timestamp
       const now = new Date();
@@ -236,9 +238,12 @@ export function SettingsPage() {
 
       toast.success('Database restored successfully. Application will now exit.');
 
-      // Exit the app after a short delay to allow toast to show
+      // Close the window after a short delay to allow toast to show
       setTimeout(async () => {
-        await invoke('exit_app');
+        if (isTauri) {
+          const { getCurrentWindow } = await import('@tauri-apps/api/window');
+          await getCurrentWindow().close();
+        }
       }, 1500);
     } catch (error) {
       console.error('Restore failed:', error);

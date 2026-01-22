@@ -425,7 +425,7 @@ export const bomPackages = {
       item_count: Array.from(store.items.values()).filter((i: any) => i.project_id === p.id).length
     })).sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
   },
-  create: async (projectId: number, packageName: string, name?: string, description?: string, version = '1.0') => {
+  create: async (projectId: number, packageName: string, name?: string, description?: string, version = '1.0', metadata?: string | null) => {
     await mockDelay();
     const id = store.ids.packages++;
     store.packages.set(id, {
@@ -435,6 +435,7 @@ export const bomPackages = {
       name: name ?? null,
       description: description ?? null,
       version,
+      metadata: metadata ?? null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     });
@@ -571,7 +572,7 @@ export const bomLocations = {
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   },
   getById: async (id: number) => { await mockDelay(); return store.locations.get(id) || null; },
-  create: async (projectId: number, name: string, exportName?: string) => {
+  create: async (projectId: number, name: string, exportName?: string, sortOrder?: number) => {
     await mockDelay();
     const id = store.ids.locations++;
     store.locations.set(id, {
@@ -579,6 +580,7 @@ export const bomLocations = {
       project_id: projectId,
       name,
       export_name: exportName ?? null,
+      sort_order: sortOrder ?? null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     });

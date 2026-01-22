@@ -110,6 +110,7 @@ export async function importJobProjectFromFile(fileContent: string): Promise<{ j
   // Create job project with unique name
   let jobProjectNumber = parsed.job_project.project_number;
   let importAttempt = 0;
+  let jobProjectId: number;
 
   while (true) {
     try {
@@ -117,6 +118,7 @@ export async function importJobProjectFromFile(fileContent: string): Promise<{ j
       if (!result.lastInsertId) {
         throw new Error('Failed to create job project');
       }
+      jobProjectId = result.lastInsertId;
       break;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
@@ -132,16 +134,18 @@ export async function importJobProjectFromFile(fileContent: string): Promise<{ j
     }
   }
 
-  // Get the created job project ID
-  const newJobProject = await db.bomJobProjects.getAll().then((projects) =>
-    projects.find((jp) => jp.project_number === jobProjectNumber)
-  );
-
-  if (!newJobProject) {
-    throw new Error('Failed to retrieve created job project');
-  }
-
   const packageIdMap: Record<string, number> = {};
+
+  // Rollback helper: delete job project if import fails
+  const rollback = async () => {
+    try {
+      await db.bomJobProjects.delete(jobProjectId);
+    } catch (e) {
+      console.warn('Failed to rollback job project import:', e);
+    }
+  };
+
+  try {
 
   // Create packages
   for (const pkg of parsed.packages) {
@@ -151,11 +155,12 @@ export async function importJobProjectFromFile(fileContent: string): Promise<{ j
     while (true) {
       try {
         const result = await db.bomPackages.create(
-          newJobProject.id,
+          jobProjectId,
           packageName,
           pkg.name ?? undefined,
           pkg.description ?? undefined,
-          pkg.version
+          pkg.version,
+          pkg.metadata
         );
         if (!result.lastInsertId) {
           throw new Error('Failed to create package');
@@ -194,14 +199,14 @@ export async function importJobProjectFromFile(fileContent: string): Promise<{ j
     let locationName = loc.name;
     let locationImportAttempt = 0;
 
-    while (true) {
-      try {
-        const result = await db.bomLocations.create(packageId, locationName, loc.export_name ?? undefined);
-        if (!result.lastInsertId) {
-          throw new Error('Failed to create location');
-        }
-        locationIdMap[loc.package_name][loc.name] = result.lastInsertId;
-        break;
+      while (true) {
+        try {
+          const result = await db.bomLocations.create(packageId, locationName, loc.export_name ?? undefined, loc.sort_order);
+          if (!result.lastInsertId) {
+            throw new Error('Failed to create location');
+          }
+          locationIdMap[loc.package_name][loc.name] = result.lastInsertId;
+          break;
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error);
         // Check for UNIQUE constraint on (project_id, name) for bom_locations
@@ -271,5 +276,10 @@ export async function importJobProjectFromFile(fileContent: string): Promise<{ j
     }
   }
 
-  return { jobProjectId: newJobProject.id };
+  return { jobProjectId };
+  } catch (error) {
+    // Rollback job project on any failure
+    await rollback();
+    throw error;
+  }
 }

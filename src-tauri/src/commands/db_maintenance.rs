@@ -1,5 +1,5 @@
 use tauri::{AppHandle, Manager};
-use tauri_plugin_sql::SqlitePool;
+use sqlx::SqlitePool;
 
 /// Backup the database to a user-specified path using VACUUM INTO
 ///
@@ -37,14 +37,29 @@ pub async fn backup_database(app_handle: AppHandle, to_path: String) -> Result<(
         .await
         .map_err(|e| format!("Failed to connect to database: {}", e))?;
 
-    // Execute VACUUM INTO
+    // Write to temp file first, then rename on success (atomic operation)
+    let temp_path = format!("{}.tmp", &to_path);
+
+    // Execute VACUUM INTO to temp file
     sqlx::query("VACUUM INTO ?")
-        .bind(&to_path)
+        .bind(&temp_path)
         .execute(&pool)
         .await
-        .map_err(|e| format!("Failed to backup database: {}", e))?;
+        .map_err(|e| {
+            // Clean up temp file on failure
+            let _ = std::fs::remove_file(&temp_path);
+            format!("Failed to backup database: {}", e)
+        })?;
 
     pool.close().await;
+
+    // Rename temp file to final path (atomic)
+    std::fs::rename(&temp_path, &to_path)
+        .map_err(|e| {
+            // Clean up temp file on failure
+            let _ = std::fs::remove_file(&temp_path);
+            format!("Failed to finalize backup file: {}", e)
+        })?;
 
     Ok(())
 }
@@ -74,6 +89,21 @@ pub async fn restore_database(app_handle: AppHandle, from_path: String) -> Resul
         ));
     }
 
+    // Check for WAL/SHM sidecar files (refuse to restore from live database)
+    let source_wal = source.with_extension("db-wal");
+    let source_shm = source.with_extension("db-shm");
+
+    // Also check for -wal and -shm suffixes (SQLite naming convention)
+    let source_wal_alt = format!("{}-wal", from_path);
+    let source_shm_alt = format!("{}-shm", from_path);
+
+    if source_wal.exists() || source_shm.exists() ||
+       std::path::Path::new(&source_wal_alt).exists() || std::path::Path::new(&source_shm_alt).exists() {
+        return Err(
+            "Restore source appears to be a live WAL database. Please restore from an app-generated backup file (.sqlite).".to_string()
+        );
+    }
+
     // Create timestamped backup of existing database if it exists
     if db_path.exists() {
         let timestamp = chrono::Utc::now().format("%Y%m%d-%H%M%S");
@@ -101,8 +131,4 @@ pub async fn restore_database(app_handle: AppHandle, from_path: String) -> Resul
     Ok(())
 }
 
-/// Exit the application
-#[tauri::command]
-pub fn exit_app() {
-    std::process::exit(0);
-}
+
