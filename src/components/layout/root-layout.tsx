@@ -23,16 +23,16 @@ const navItems = [
 export function RootLayout() {
   return (
     <div className="flex flex-col h-screen bg-background">
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Sidebar */}
-        <aside className="w-56 border-r bg-muted/30 flex flex-col">
+        <aside className="w-56 border-r bg-muted/30 flex flex-col min-h-0">
           {/* Logo/Title */}
           <div className="h-14 flex items-center px-4 border-b">
             <h1 className="font-semibold text-lg">ATS CHD Tools</h1>
           </div>
 
           {/* Navigation */}
-          <ScrollArea className="flex-1 py-2">
+          <ScrollArea className="flex-1 h-full py-2">
             <nav className="space-y-1 px-2">
               {navItems.map((item) => (
                 <NavLink
@@ -76,8 +76,8 @@ export function RootLayout() {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <ScrollArea className="flex-1">
+        <main className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <ScrollArea className="flex-1 h-full">
             <div className="p-6">
               <Outlet />
             </div>

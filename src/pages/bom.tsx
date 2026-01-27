@@ -22,6 +22,7 @@ export function BomPage() {
     setScope,
   } = useBOMStore();
   const [isProjectManagerOpen, setIsProjectManagerOpen] = useState(false);
+  const isEffectiveOpen = isProjectManagerOpen || !currentScopePackageId;
 
   useEffect(() => {
     // Load job projects and packages on mount
@@ -34,13 +35,6 @@ export function BomPage() {
       // This is per phase context: modal always opens on BOM entry
     });
   }, [loadJobProjects, loadAllPackages, loadLastScope]);
-
-  // Always open modal if no scope selected
-  useEffect(() => {
-    if (!currentScopePackageId) {
-      setIsProjectManagerOpen(true);
-    }
-  }, [currentScopePackageId]);
 
   const handleChangeScope = () => {
     setIsProjectManagerOpen(true);
@@ -81,13 +75,13 @@ export function BomPage() {
             )}
             
             <ProjectManagerDialog
-              open={isProjectManagerOpen}
+              open={isEffectiveOpen}
               onOpenChange={handleOpenChange}
               onSelectPackage={handleSelectPackage}
               onCancel={() => navigate('/')}
             />
             
-            {!isProjectManagerOpen && (
+            {!isEffectiveOpen && (
                <Button onClick={() => setIsProjectManagerOpen(true)}>
                  Open Project Manager
                </Button>
@@ -132,7 +126,7 @@ export function BomPage() {
 
       {/* Project Manager Dialog - blocking until scope selected */}
       <ProjectManagerDialog
-        open={isProjectManagerOpen}
+        open={isEffectiveOpen}
         onOpenChange={handleOpenChange}
         onSelectPackage={handleSelectPackage}
         onCancel={() => navigate('/')}
