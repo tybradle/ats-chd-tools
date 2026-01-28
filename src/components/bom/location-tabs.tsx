@@ -9,12 +9,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Plus, X, Pencil } from 'lucide-react';
 import { useBOMStore } from '@/stores/bom-store';
 import type { BOMLocationWithCount } from '@/types/bom';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+
 
 export function LocationTabs() {
   const {
@@ -31,11 +42,13 @@ export function LocationTabs() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<{ id: number; name: string; export_name: string | null } | null>(null);
+  const [locationToDelete, setLocationToDelete] = useState<BOMLocationWithCount | null>(null);
   const [newName, setNewName] = useState('');
   const [editName, setEditName] = useState('');
   const [editExportName, setEditExportName] = useState('');
 
   const handleAdd = async () => {
+
     if (!currentScopePackageId || !newName.trim()) return;
 
     try {
@@ -72,18 +85,18 @@ export function LocationTabs() {
     }
   };
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Are you sure you want to delete location "${name}"? This will also delete all items in this location.`)) {
-      return;
-    }
+  const confirmDelete = async () => {
+    if (!locationToDelete) return;
 
     try {
-      await deleteLocation(id);
+      await deleteLocation(locationToDelete.id);
+      setLocationToDelete(null);
       toast.success('Location deleted');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to delete location');
     }
   };
+
 
   return (
     <div className="border-b bg-muted/30">
@@ -133,12 +146,13 @@ export function LocationTabs() {
                     <Pencil className="h-3 w-3" />
                   </button>
                   <button
-                    onClick={() => handleDelete(loc.id, loc.name)}
+                    onClick={() => setLocationToDelete(loc)}
                     className="p-1 rounded hover:bg-destructive hover:text-destructive-foreground"
                     title="Delete"
                   >
                     <X className="h-3 w-3" />
                   </button>
+
                 </div>
               </div>
             ))
@@ -213,6 +227,31 @@ export function LocationTabs() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!locationToDelete} onOpenChange={(open) => !open && setLocationToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Location</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete location "{locationToDelete?.name}"? 
+              This will also delete all {locationToDelete?.item_count} items in this location. 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={loading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Location
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+

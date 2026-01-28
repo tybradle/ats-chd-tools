@@ -302,8 +302,32 @@ export const categories = {
 };
 
 export const parts = {
-  getAll: async () => { await mockDelay(); return Array.from(store.parts.values()); },
-  getById: async (id: number) => { await mockDelay(); return store.parts.get(id) || null; },
+  getAll: async () => {
+    await mockDelay();
+    return Array.from(store.parts.values()).map((p: any) => {
+      const mfr = store.manufacturers.get(p.manufacturer_id);
+      const cat = store.categories.get(p.category_id);
+      return {
+        ...p,
+        manufacturer_name: mfr?.name || '',
+        manufacturer_code: mfr?.code || null,
+        category_name: cat?.name || null
+      };
+    });
+  },
+  getById: async (id: number) => {
+    await mockDelay();
+    const p = store.parts.get(id);
+    if (!p) return null;
+    const mfr = store.manufacturers.get(p.manufacturer_id);
+    const cat = store.categories.get(p.category_id);
+    return {
+      ...p,
+      manufacturer_name: mfr?.name || '',
+      manufacturer_code: mfr?.code || null,
+      category_name: cat?.name || null
+    };
+  },
   getByKey: async (partNumber: string, manufacturerId: number) => {
     await mockDelay();
     const lowerPN = partNumber.toLowerCase();
@@ -311,14 +335,37 @@ export const parts = {
       p.part_number.toLowerCase() === lowerPN && p.manufacturer_id === manufacturerId
     ) || null;
   },
-  search: async (term: string, limit = 50) => {
+  search: async (term: string, manufacturerIds: number[] = [], limit = 50) => {
     await mockDelay();
     const lowerTerm = term.toLowerCase().replace('*', '');
+    const hasTerm = lowerTerm.length > 0;
+    const hasMfrFilter = manufacturerIds.length > 0;
+
     return Array.from(store.parts.values())
-      .filter((p: any) =>
-        p.part_number.toLowerCase().includes(lowerTerm) ||
-        p.description.toLowerCase().includes(lowerTerm)
-      )
+      .filter((p: any) => {
+        const mfr = store.manufacturers.get(p.manufacturer_id);
+        const mfrName = mfr?.name.toLowerCase() || '';
+
+        const matchesTerm = !hasTerm || (
+          p.part_number.toLowerCase().includes(lowerTerm) ||
+          p.description.toLowerCase().includes(lowerTerm) ||
+          mfrName.includes(lowerTerm)
+        );
+
+        const matchesMfrFilter = !hasMfrFilter || manufacturerIds.includes(p.manufacturer_id);
+
+        return matchesTerm && matchesMfrFilter;
+      })
+      .map((p: any) => {
+        const mfr = store.manufacturers.get(p.manufacturer_id);
+        const cat = store.categories.get(p.category_id);
+        return {
+          ...p,
+          manufacturer_name: mfr?.name || '',
+          manufacturer_code: mfr?.code || null,
+          category_name: cat?.name || null
+        };
+      })
       .slice(0, limit);
   },
   create: async (part: any) => {

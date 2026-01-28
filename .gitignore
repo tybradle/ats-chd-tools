@@ -43,3 +43,11 @@ src-tauri/Cargo.lock
 
 # OS files
 Thumbs.db
+
+# Local agent/tooling artifacts
+.planning/
+.opencode/sessions/
+NUL
+
+# Tauri generated assets
+tauri-codegen-assets/

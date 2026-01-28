@@ -7,7 +7,7 @@ import {
   getSortedRowModel,
   type SortingState,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePartsStore } from "@/stores/parts-store";
 import {
   Table,
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Edit, Trash2, Search } from "lucide-react";
+import { Edit, Trash2, Search, Filter, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +31,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { PartWithManufacturer } from "@/types/parts";
 
 interface PartsTableProps {
@@ -40,7 +48,18 @@ interface PartsTableProps {
 const columnHelper = createColumnHelper<PartWithManufacturer>();
 
 export function PartsTable({ onEdit }: PartsTableProps) {
-  const { parts, deletePart, searchQuery, setSearchQuery, searchParts } = usePartsStore();
+  const { 
+    parts, 
+    manufacturers,
+    deletePart, 
+    searchQuery, 
+    setSearchQuery, 
+    selectedManufacturerIds,
+    setManufacturerFilter,
+    clearFilters,
+    searchParts,
+    isLoading
+  } = usePartsStore();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [partToDelete, setPartToDelete] = useState<number | null>(null);
 
@@ -124,27 +143,76 @@ export function PartsTable({ onEdit }: PartsTableProps) {
     },
   });
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    searchParts(searchQuery);
-  };
+  // Debounced search effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchParts({ query: searchQuery, manufacturerIds: selectedManufacturerIds });
+      table.setPageIndex(0);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedManufacturerIds, searchParts, table]);
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
-        <form onSubmit={handleSearch} className="flex-1 flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search parts..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-          <Button type="submit">Search</Button>
-        </form>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search parts..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex gap-2">
+                <Filter className="h-4 w-4" />
+                Manufacturers
+                {selectedManufacturerIds.length > 0 && (
+                  <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                    {selectedManufacturerIds.length}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 max-h-[300px] overflow-y-auto" align="end">
+              <DropdownMenuLabel>Filter by Manufacturer</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {manufacturers.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">No manufacturers</div>
+              ) : (
+                manufacturers.map((mfr) => (
+                  <DropdownMenuCheckboxItem
+                    key={mfr.id}
+                    checked={selectedManufacturerIds.includes(mfr.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setManufacturerFilter([...selectedManufacturerIds, mfr.id]);
+                      } else {
+                        setManufacturerFilter(selectedManufacturerIds.filter(id => id !== mfr.id));
+                      }
+                    }}
+                  >
+                    {mfr.name}
+                  </DropdownMenuCheckboxItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {(searchQuery || selectedManufacturerIds.length > 0) && (
+            <Button variant="ghost" onClick={clearFilters} className="px-2">
+              <X className="h-4 w-4 mr-1" />
+              Clear
+            </Button>
+          )}
+        </div>
       </div>
+
 
       <div className="rounded-md border">
         <Table>
@@ -165,8 +233,21 @@ export function PartsTable({ onEdit }: PartsTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                    Searching...
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
+
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}

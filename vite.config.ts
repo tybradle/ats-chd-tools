@@ -16,6 +16,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ["react", "react-dom"],
   },
   // Prevent Vite from obscuring Rust errors
   clearScreen: false,

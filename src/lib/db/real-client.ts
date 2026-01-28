@@ -171,8 +171,11 @@ export const parts = {
       LIMIT 1
     `, [partNumber, manufacturerId]).then(rows => rows[0] ?? null),
   
-  search: (term: string, limit = 50) =>
-    query<PartWithManufacturer>(`
+  search: (term: string, manufacturerIds: number[] = [], limit = 50) => {
+    const hasTerm = term.trim().length > 0;
+    const hasMfrFilter = manufacturerIds.length > 0;
+
+    let sql = `
       SELECT 
         p.*, 
         m.name as manufacturer_name, 
@@ -181,11 +184,30 @@ export const parts = {
       FROM parts p
       JOIN manufacturers m ON p.manufacturer_id = m.id
       LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.id IN (
-        SELECT rowid FROM parts_fts WHERE parts_fts MATCH ?
-      )
-      LIMIT ?
-    `, [`${term}*`, limit]),
+      WHERE 1=1
+    `;
+    const params: (string | number)[] = [];
+
+    if (hasTerm) {
+      sql += ` AND (
+        p.id IN (SELECT rowid FROM parts_fts WHERE parts_fts MATCH ?)
+        OR 
+        m.name LIKE ?
+      )`;
+      params.push(`${term}*`, `%${term}%`);
+    }
+
+    if (hasMfrFilter) {
+      const placeholders = manufacturerIds.map(() => '?').join(', ');
+      sql += ` AND p.manufacturer_id IN (${placeholders})`;
+      params.push(...manufacturerIds);
+    }
+
+    sql += ` ORDER BY p.part_number LIMIT ?`;
+    params.push(limit);
+
+    return query<PartWithManufacturer>(sql, params);
+  },
   
   create: (part: Omit<Part, "id" | "created_at" | "updated_at">) =>
     execute(
