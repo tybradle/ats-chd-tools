@@ -129,7 +129,7 @@ export function LocationTabs() {
                       ({loc.item_count})
                     </span>
                     {loc.export_name && (
-                      <span className="text-[10px] text-blue-500 uppercase font-bold" title={`Export: ${loc.export_name}`}>
+                      <span className="text-[10px] text-primary uppercase font-bold" title={`Export: ${loc.export_name}`}>
                         [{loc.export_name}]
                       </span>
                     )}
@@ -254,4 +254,3 @@ export function LocationTabs() {
     </div>
   );
 }
-

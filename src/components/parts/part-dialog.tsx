@@ -112,10 +112,10 @@ export function PartDialog({ open, onOpenChange, partToEdit }: PartDialogProps) 
               <Input
                 id="part_number"
                 {...form.register("part_number")}
-                className={form.formState.errors.part_number ? "border-red-500" : ""}
+                className={form.formState.errors.part_number ? "border-destructive" : ""}
               />
               {form.formState.errors.part_number && (
-                <p className="text-xs text-red-500 mt-1">{form.formState.errors.part_number.message}</p>
+                <p className="text-xs text-destructive mt-1">{form.formState.errors.part_number.message}</p>
               )}
             </div>
           </div>
@@ -129,7 +129,7 @@ export function PartDialog({ open, onOpenChange, partToEdit }: PartDialogProps) 
                 value={form.watch("manufacturer_id")?.toString() || ""}
                 onValueChange={(value) => form.setValue("manufacturer_id", Number(value), { shouldValidate: true })}
               >
-                <SelectTrigger className={form.formState.errors.manufacturer_id ? "border-red-500" : ""}>
+                <SelectTrigger className={form.formState.errors.manufacturer_id ? "border-destructive" : ""}>
                   <SelectValue placeholder="Select manufacturer" />
                 </SelectTrigger>
                 <SelectContent>
@@ -141,7 +141,7 @@ export function PartDialog({ open, onOpenChange, partToEdit }: PartDialogProps) 
                 </SelectContent>
               </Select>
               {form.formState.errors.manufacturer_id && (
-                <p className="text-xs text-red-500 mt-1">{form.formState.errors.manufacturer_id.message}</p>
+                <p className="text-xs text-destructive mt-1">{form.formState.errors.manufacturer_id.message}</p>
               )}
             </div>
           </div>
@@ -154,10 +154,10 @@ export function PartDialog({ open, onOpenChange, partToEdit }: PartDialogProps) 
               <Input
                 id="description"
                 {...form.register("description")}
-                className={form.formState.errors.description ? "border-red-500" : ""}
+                className={form.formState.errors.description ? "border-destructive" : ""}
               />
               {form.formState.errors.description && (
-                <p className="text-xs text-red-500 mt-1">{form.formState.errors.description.message}</p>
+                <p className="text-xs text-destructive mt-1">{form.formState.errors.description.message}</p>
               )}
             </div>
           </div>
@@ -206,10 +206,10 @@ export function PartDialog({ open, onOpenChange, partToEdit }: PartDialogProps) 
               <Input
                 id="unit"
                 {...form.register("unit")}
-                className={form.formState.errors.unit ? "border-red-500" : ""}
+                className={form.formState.errors.unit ? "border-destructive" : ""}
               />
               {form.formState.errors.unit && (
-                <p className="text-xs text-red-500 mt-1">{form.formState.errors.unit.message}</p>
+                <p className="text-xs text-destructive mt-1">{form.formState.errors.unit.message}</p>
               )}
             </div>
           </div>

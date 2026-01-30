@@ -51,21 +51,24 @@ const modules = [
 export function HomePage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome</h1>
-        <p className="text-muted-foreground mt-1">
-          Select a module to get started with your work.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Engineering Support Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Welcome — Select a module to get started.</p>
+        </div>
+        <div>
+          <span className="inline-flex items-center px-2 py-1 rounded-full bg-secondary text-secondary-foreground text-sm font-medium">System Online</span>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {modules.map((module) => (
-          <Link
-            key={module.title}
-            to={module.to}
-            className={module.status === "coming" ? "pointer-events-none" : ""}
-          >
-            <Card className={`h-full transition-colors hover:bg-muted/50 ${module.status === "coming" ? "opacity-60" : ""}`}>
+          {modules.map((module) => (
+            <Link
+              key={module.title}
+              to={module.to}
+              className={module.status === "coming" ? "pointer-events-none" : ""}
+            >
+            <Card className={`h-full transition-colors hover:border-sidebar-ring hover:border hover:shadow-sm ${module.status === "coming" ? "opacity-60" : ""}`}>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="p-2 bg-primary/10 rounded-lg w-fit">
@@ -83,7 +86,7 @@ export function HomePage() {
               <CardContent />
             </Card>
           </Link>
-        ))}
+          ))}
       </div>
     </div>
   );

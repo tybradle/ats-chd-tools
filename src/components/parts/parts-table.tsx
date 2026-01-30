@@ -95,16 +95,16 @@ export function PartsTable({ onEdit }: PartsTableProps) {
             <Edit className="h-4 w-4" />
           </Button>
           <AlertDialog open={partToDelete === info.row.original.id} onOpenChange={(open) => !open && setPartToDelete(null)}>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-red-500 hover:text-red-600"
-                onClick={() => setPartToDelete(info.row.original.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </AlertDialogTrigger>
+              <AlertDialogTrigger asChild>
+               <Button
+                 variant="ghost"
+                 size="icon"
+                 className="text-destructive hover:text-destructive-foreground"
+                 onClick={() => setPartToDelete(info.row.original.id)}
+               >
+                 <Trash2 className="h-4 w-4" />
+               </Button>
+             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Part</AlertDialogTitle>
@@ -114,15 +114,15 @@ export function PartsTable({ onEdit }: PartsTableProps) {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-red-500 hover:bg-red-600"
-                  onClick={async () => {
-                    await deletePart(info.row.original.id);
-                    setPartToDelete(null);
-                  }}
-                >
-                  Delete
-                </AlertDialogAction>
+                 <AlertDialogAction
+                   className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                   onClick={async () => {
+                     await deletePart(info.row.original.id);
+                     setPartToDelete(null);
+                   }}
+                 >
+                   Delete
+                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
