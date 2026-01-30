@@ -51,3 +51,4 @@ NUL
 
 # Tauri generated assets
 tauri-codegen-assets/
+.samples/
