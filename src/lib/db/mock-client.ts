@@ -389,6 +389,12 @@ export const parts = {
     const deleted = store.parts.delete(id);
     if (deleted) saveToStorage();
     return { rowsAffected: deleted ? 1 : 0, lastInsertId: undefined };
+  },
+  deleteAll: async () => {
+    await mockDelay();
+    store.parts.clear();
+    saveToStorage();
+    return { rowsAffected: 1, lastInsertId: undefined };
   }
 };
 

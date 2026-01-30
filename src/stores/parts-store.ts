@@ -19,6 +19,7 @@ interface PartsState {
   addPart: (part: Omit<Part, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updatePart: (id: number, part: Partial<Omit<Part, 'id' | 'created_at' | 'updated_at'>>) => Promise<void>;
   deletePart: (id: number) => Promise<void>;
+  deleteAllParts: () => Promise<void>;
   setSearchQuery: (query: string) => void;
   setManufacturerFilter: (ids: number[]) => void;
   clearFilters: () => void;
@@ -161,6 +162,20 @@ export const usePartsStore = create<PartsState>((set, get) => ({
       console.error('Failed to delete part:', error);
       set({ error: 'Failed to delete part', isLoading: false });
       toast.error("Failed to delete part");
+      throw error;
+    }
+  },
+
+  deleteAllParts: async () => {
+    set({ isLoading: true });
+    try {
+      await parts.deleteAll();
+      set({ parts: [], isLoading: false });
+      toast.success("All parts deleted successfully");
+    } catch (error) {
+      console.error('Failed to delete all parts:', error);
+      set({ error: 'Failed to delete all parts', isLoading: false });
+      toast.error("Failed to delete all parts");
       throw error;
     }
   },

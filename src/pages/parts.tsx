@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { usePartsStore } from "@/stores/parts-store";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Import, Download } from "lucide-react";
+import { Plus, Import, Download, Trash2 } from "lucide-react";
 import { PartsTable } from "@/components/parts/parts-table";
 import { PartDialog } from "@/components/parts/part-dialog";
 import { PartsImportDialog } from "@/components/parts/parts-import-dialog";
 import { PartsExportDialog } from "@/components/parts/parts-export-dialog";
+import { NuclearEraseDialog } from "@/components/parts/nuclear-erase-dialog";
 import type { PartWithManufacturer } from "@/types/parts";
 
 export function PartsPage() {
@@ -15,6 +16,7 @@ export function PartsPage() {
   const [partToEdit, setPartToEdit] = useState<PartWithManufacturer | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [isEraseDialogOpen, setIsEraseDialogOpen] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -52,6 +54,10 @@ export function PartsPage() {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
+          <Button variant="destructive" onClick={() => setIsEraseDialogOpen(true)}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Erase All
+          </Button>
           <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
             Add Part
@@ -87,6 +93,11 @@ export function PartsPage() {
         open={isExportDialogOpen}
         onOpenChange={setIsExportDialogOpen}
         parts={parts}
+      />
+
+      <NuclearEraseDialog
+        open={isEraseDialogOpen}
+        onOpenChange={setIsEraseDialogOpen}
       />
     </div>
   );

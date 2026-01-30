@@ -1,7 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-// Load Inter from @fontsource for offline-safe typography
-import "@fontsource/inter/variable.css"
+// Load Inter variable font for offline-safe typography
+// import the package entry which provides variable font CSS
+import "@fontsource-variable/inter/index.css"
 import './index.css'
 import App from './App.tsx'
 import { ErrorBoundary } from '@/components/error-boundary'

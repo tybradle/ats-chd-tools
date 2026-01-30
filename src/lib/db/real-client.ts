@@ -237,6 +237,9 @@ export const parts = {
   
   delete: (id: number) =>
     execute("DELETE FROM parts WHERE id = ?", [id]),
+
+  deleteAll: () =>
+    execute("DELETE FROM parts"),
 };
 
 // Settings
