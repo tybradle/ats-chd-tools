@@ -37,3 +37,10 @@ export const bomItems = isTauri ? RealClient.bomItems : MockClient.bomItems;
 export const bomExports = isTauri ? RealClient.bomExports : MockClient.bomExports;
 
 export const glenair = isTauri ? RealClient.glenair : MockClient.glenair;
+
+// Load Calc APIs
+export const partsElectrical = isTauri ? RealClient.partsElectrical : MockClient.partsElectrical;
+export const loadCalcProjects = isTauri ? RealClient.loadCalcProjects : MockClient.loadCalcProjects;
+export const loadCalcVoltageTables = isTauri ? RealClient.loadCalcVoltageTables : MockClient.loadCalcVoltageTables;
+export const loadCalcLineItems = isTauri ? RealClient.loadCalcLineItems : MockClient.loadCalcLineItems;
+export const loadCalcResults = isTauri ? RealClient.loadCalcResults : MockClient.loadCalcResults;

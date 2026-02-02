@@ -31,6 +31,12 @@ pub fn run() {
             sql: include_str!("../migrations/004_project_package_scoping.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 5,
+            description: "Load Calculator tables + part_electrical rebuild",
+            sql: include_str!("../migrations/005_load_calc_tables.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

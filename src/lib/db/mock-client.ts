@@ -796,3 +796,62 @@ export const glenair = {
   getCompatibleContactSizes: async () => [],
   getPHMByArrangement: async () => null,
 };
+
+// -------------------------
+// Additional mocks for Load Calc and part_electrical
+// -------------------------
+
+const partElectricalStore = new Map<number, any>();
+let partElectricalId = 1;
+
+export const partsElectrical = {
+  getByPartAndVoltageType: async (partId: number, voltageType: string) => {
+    await mockDelay();
+    for (const pe of Array.from(partElectricalStore.values())) {
+      if (pe.part_id === partId && pe.voltage_type === voltageType) return pe;
+    }
+    return null;
+  },
+  getVoltageTypesForPart: async (partId: number) => {
+    await mockDelay();
+    return Array.from(partElectricalStore.values()).filter(pe => pe.part_id === partId).map(pe => ({ voltage_type: pe.voltage_type }));
+  },
+  create: async (entry: any) => {
+    await mockDelay();
+    const id = partElectricalId++;
+    partElectricalStore.set(id, { id, ...entry, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+    return { rowsAffected: 1, lastInsertId: id };
+  }
+};
+
+export const loadCalcProjects = {
+  getById: async (id: number) => { await mockDelay(); console.log('[MockDB] loadCalcProjects.getById', id); return null; },
+  getAll: async () => { await mockDelay(); console.log('[MockDB] loadCalcProjects.getAll'); return []; },
+  getByBomPackageId: async (bomPackageId: number) => { await mockDelay(); console.log('[MockDB] loadCalcProjects.getByBomPackageId', bomPackageId); return []; },
+  create: async (name: string, _description?: string | null, bomPackageId?: number | null) => { await mockDelay(); console.log('[MockDB] loadCalcProjects.create', name, bomPackageId); return { rowsAffected: 1, lastInsertId: 1 }; },
+  update: async (id: number, updates: any) => { await mockDelay(); console.log('[MockDB] loadCalcProjects.update', id, updates); return { rowsAffected: 1, lastInsertId: undefined }; },
+  delete: async (id: number) => { await mockDelay(); console.log('[MockDB] loadCalcProjects.delete', id); return { rowsAffected: 1, lastInsertId: undefined }; }
+};
+
+export const loadCalcVoltageTables = {
+  getById: async (id: number) => { await mockDelay(); console.log('[MockDB] loadCalcVoltageTables.getById', id); return null; },
+  getByProject: async (projectId: number) => { await mockDelay(); console.log('[MockDB] loadCalcVoltageTables.getByProject', projectId); return []; },
+  create: async (projectId: number, locationId: number | null, voltageType: string, isLocked = 0, sortOrder = 0) => { await mockDelay(); console.log('[MockDB] loadCalcVoltageTables.create', projectId, locationId, voltageType, isLocked, sortOrder); return { rowsAffected: 1, lastInsertId: 1 }; },
+  update: async (id: number, updates: any) => { await mockDelay(); console.log('[MockDB] loadCalcVoltageTables.update', id, updates); return { rowsAffected: 1, lastInsertId: undefined }; },
+  delete: async (id: number) => { await mockDelay(); console.log('[MockDB] loadCalcVoltageTables.delete', id); return { rowsAffected: 1, lastInsertId: undefined }; }
+};
+
+export const loadCalcLineItems = {
+  getByVoltageTable: async (voltageTableId: number) => { await mockDelay(); console.log('[MockDB] loadCalcLineItems.getByVoltageTable', voltageTableId); return []; },
+  create: async (item: any) => { await mockDelay(); console.log('[MockDB] loadCalcLineItems.create', item); return { rowsAffected: 1, lastInsertId: 1 }; },
+  update: async (id: number, updates: any) => { await mockDelay(); console.log('[MockDB] loadCalcLineItems.update', id, updates); return { rowsAffected: 1, lastInsertId: undefined }; },
+  delete: async (id: number) => { await mockDelay(); console.log('[MockDB] loadCalcLineItems.delete', id); return { rowsAffected: 1, lastInsertId: undefined }; },
+  bulkCreate: async (items: any[]) => { await mockDelay(); console.log('[MockDB] loadCalcLineItems.bulkCreate count', items?.length ?? 0); return []; }
+};
+
+export const loadCalcResults = {
+  getByProject: async (projectId: number) => { await mockDelay(); console.log('[MockDB] loadCalcResults.getByProject', projectId); return []; },
+  upsertForVoltageTable: async (projectId: number, voltageTableId: number | null, totals: any) => { await mockDelay(); console.log('[MockDB] loadCalcResults.upsertForVoltageTable', projectId, voltageTableId, totals); return { rowsAffected: 1, lastInsertId: 1 }; },
+  deleteByProject: async (projectId: number) => { await mockDelay(); console.log('[MockDB] loadCalcResults.deleteByProject', projectId); return { rowsAffected: 1, lastInsertId: undefined }; },
+  deleteByVoltageTable: async (voltageTableId: number) => { await mockDelay(); console.log('[MockDB] loadCalcResults.deleteByVoltageTable', voltageTableId); return { rowsAffected: 1, lastInsertId: undefined }; }
+};

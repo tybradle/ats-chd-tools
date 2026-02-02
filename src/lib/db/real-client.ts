@@ -79,6 +79,10 @@ import type { Manufacturer, Category, Part, PartWithManufacturer } from '@/types
 
 export type { Manufacturer, Category, Part, PartWithManufacturer };
 
+import type { LoadCalcProject, LoadCalcVoltageTable, LoadCalcLineItem, LoadCalcResult } from '@/types/load-calc';
+
+export type { LoadCalcProject, LoadCalcVoltageTable, LoadCalcLineItem, LoadCalcResult };
+
 export interface Setting {
   key: string;
   value: string | null;
@@ -240,6 +244,122 @@ export const parts = {
 
   deleteAll: () =>
     execute("DELETE FROM parts"),
+};
+
+// Parts electrical helpers supporting voltage_type
+export const partsElectrical = {
+  getByPartAndVoltageType: (partId: number, voltageType: string) =>
+    query<Record<string, unknown>>('SELECT * FROM part_electrical WHERE part_id = ? AND voltage_type = ? LIMIT 1', [partId, voltageType])
+      .then(rows => rows[0] ?? null),
+
+  getVoltageTypesForPart: (partId: number) =>
+    query<{ voltage_type: string }[]>('SELECT DISTINCT voltage_type FROM part_electrical WHERE part_id = ?', [partId])
+    ,
+
+  create: (entry: { part_id: number; voltage?: number | null; phase?: string | null; amperage?: number | null; wattage?: number | null; heat_dissipation_btu?: number | null; voltage_type: string }) =>
+    execute(
+      `INSERT INTO part_electrical (part_id, voltage, phase, amperage, wattage, heat_dissipation_btu, voltage_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(part_id, voltage_type) DO UPDATE SET amperage = excluded.amperage, wattage = excluded.wattage, updated_at = CURRENT_TIMESTAMP`,
+      [entry.part_id, entry.voltage ?? null, entry.phase ?? null, entry.amperage ?? null, entry.wattage ?? null, entry.heat_dissipation_btu ?? null, entry.voltage_type]
+    )
+};
+
+// Load Calc APIs
+export const loadCalcProjects = {
+  getById: (id: number) => query<LoadCalcProject>('SELECT * FROM load_calc_projects WHERE id = ?', [id]).then(r => r[0] ?? null),
+  getAll: () => query<LoadCalcProject>('SELECT * FROM load_calc_projects ORDER BY updated_at DESC'),
+  getByBomPackageId: (bomPackageId: number) => query<LoadCalcProject>('SELECT * FROM load_calc_projects WHERE bom_package_id = ? ORDER BY updated_at DESC', [bomPackageId]),
+  create: (name: string, description?: string | null, bomPackageId?: number | null) => execute('INSERT INTO load_calc_projects (name, description, bom_package_id) VALUES (?, ?, ?)', [name, description ?? null, bomPackageId ?? null]),
+  update: (id: number, updates: Partial<LoadCalcProject>) => {
+    const fields: string[] = [];
+    const values: unknown[] = [];
+    if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
+    if (updates.description !== undefined) { fields.push('description = ?'); values.push(updates.description); }
+    if (updates.bom_package_id !== undefined) { fields.push('bom_package_id = ?'); values.push(updates.bom_package_id); }
+    if (fields.length === 0) return Promise.resolve({ rowsAffected: 0, lastInsertId: 0 });
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+    return execute(`UPDATE load_calc_projects SET ${fields.join(', ')} WHERE id = ?`, values);
+  },
+  delete: (id: number) => execute('DELETE FROM load_calc_projects WHERE id = ?', [id])
+};
+
+export const loadCalcVoltageTables = {
+  getById: (id: number) => query<LoadCalcVoltageTable>('SELECT * FROM load_calc_voltage_tables WHERE id = ?', [id]).then(r => r[0] ?? null),
+  getByProject: (projectId: number) => query<LoadCalcVoltageTable>('SELECT * FROM load_calc_voltage_tables WHERE project_id = ? ORDER BY sort_order, id', [projectId]),
+  create: (projectId: number, locationId: number | null, voltageType: string, isLocked = 0, sortOrder = 0) => execute('INSERT INTO load_calc_voltage_tables (project_id, location_id, voltage_type, is_locked, sort_order) VALUES (?, ?, ?, ?, ?)', [projectId, locationId ?? null, voltageType, isLocked, sortOrder]),
+  update: (id: number, updates: Partial<LoadCalcVoltageTable>) => {
+    const fields: string[] = [];
+    const values: unknown[] = [];
+    if (updates.location_id !== undefined) { fields.push('location_id = ?'); values.push(updates.location_id); }
+    if (updates.voltage_type !== undefined) { fields.push('voltage_type = ?'); values.push(updates.voltage_type); }
+    if (updates.is_locked !== undefined) { fields.push('is_locked = ?'); values.push(updates.is_locked ? 1 : 0); }
+    if (updates.sort_order !== undefined) { fields.push('sort_order = ?'); values.push(updates.sort_order); }
+    if (fields.length === 0) return Promise.resolve({ rowsAffected: 0, lastInsertId: 0 });
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+    return execute(`UPDATE load_calc_voltage_tables SET ${fields.join(', ')} WHERE id = ?`, values);
+  },
+  delete: (id: number) => execute('DELETE FROM load_calc_voltage_tables WHERE id = ?', [id])
+};
+
+export const loadCalcLineItems = {
+  getByVoltageTable: (voltageTableId: number) => query<LoadCalcLineItem>('SELECT * FROM load_calc_line_items WHERE voltage_table_id = ? ORDER BY sort_order, id', [voltageTableId]),
+  create: (item: Omit<LoadCalcLineItem, 'id' | 'created_at' | 'updated_at'>) => execute(
+    `INSERT INTO load_calc_line_items (voltage_table_id, part_id, manual_part_number, description, qty, utilization_pct, amperage_override, wattage_override, heat_dissipation_override, power_group, phase_assignment, sort_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [item.voltage_table_id, item.part_id ?? null, item.manual_part_number ?? null, item.description ?? null, item.qty, item.utilization_pct, item.amperage_override ?? null, item.wattage_override ?? null, item.heat_dissipation_override ?? null, item.power_group ?? null, item.phase_assignment ?? null, item.sort_order ?? 0]
+  ),
+  update: (id: number, updates: Partial<LoadCalcLineItem>) => {
+    const fields: string[] = [];
+    const values: unknown[] = [];
+    if (updates.part_id !== undefined) { fields.push('part_id = ?'); values.push(updates.part_id); }
+    if (updates.manual_part_number !== undefined) { fields.push('manual_part_number = ?'); values.push(updates.manual_part_number); }
+    if (updates.description !== undefined) { fields.push('description = ?'); values.push(updates.description); }
+    if (updates.qty !== undefined) { fields.push('qty = ?'); values.push(updates.qty); }
+    if (updates.utilization_pct !== undefined) { fields.push('utilization_pct = ?'); values.push(updates.utilization_pct); }
+    if (updates.amperage_override !== undefined) { fields.push('amperage_override = ?'); values.push(updates.amperage_override); }
+    if (updates.wattage_override !== undefined) { fields.push('wattage_override = ?'); values.push(updates.wattage_override); }
+    if (updates.heat_dissipation_override !== undefined) { fields.push('heat_dissipation_override = ?'); values.push(updates.heat_dissipation_override); }
+    if (updates.power_group !== undefined) { fields.push('power_group = ?'); values.push(updates.power_group); }
+    if (updates.phase_assignment !== undefined) { fields.push('phase_assignment = ?'); values.push(updates.phase_assignment); }
+    if (updates.sort_order !== undefined) { fields.push('sort_order = ?'); values.push(updates.sort_order); }
+    if (fields.length === 0) return Promise.resolve({ rowsAffected: 0, lastInsertId: 0 });
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+    return execute(`UPDATE load_calc_line_items SET ${fields.join(', ')} WHERE id = ?`, values);
+  },
+  delete: (id: number) => execute('DELETE FROM load_calc_line_items WHERE id = ?', [id]),
+  bulkCreate: async (items: Omit<LoadCalcLineItem, 'id' | 'created_at' | 'updated_at'>[]) => {
+    if (items.length === 0) return [];
+    const COLUMNS_PER_ROW = 12;
+    const SQLITE_MAX_PARAMS = 999;
+    const MAX_ROWS_PER_BATCH = Math.floor(SQLITE_MAX_PARAMS / COLUMNS_PER_ROW);
+    const db = await getDb();
+    const results: Array<{ rowsAffected: number; lastInsertId: number | undefined }> = [];
+    for (let i = 0; i < items.length; i += MAX_ROWS_PER_BATCH) {
+      const batch = items.slice(i, Math.min(i + MAX_ROWS_PER_BATCH, items.length));
+      const placeholders = batch.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
+      const values: unknown[] = [];
+      for (const it of batch) {
+        values.push(it.voltage_table_id, it.part_id ?? null, it.manual_part_number ?? null, it.description ?? null, it.qty, it.utilization_pct, it.amperage_override ?? null, it.wattage_override ?? null, it.heat_dissipation_override ?? null, it.power_group ?? null, it.phase_assignment ?? null, it.sort_order ?? 0);
+      }
+      await db.execute(`INSERT INTO load_calc_line_items (voltage_table_id, part_id, manual_part_number, description, qty, utilization_pct, amperage_override, wattage_override, heat_dissipation_override, power_group, phase_assignment, sort_order) VALUES ${placeholders}`, values);
+      results.push({ rowsAffected: batch.length, lastInsertId: undefined });
+    }
+    return results;
+  }
+};
+
+export const loadCalcResults = {
+  getByProject: (projectId: number) => query<LoadCalcResult>('SELECT * FROM load_calc_results WHERE project_id = ? ORDER BY calculated_at DESC', [projectId]),
+  upsertForVoltageTable: async (projectId: number, voltageTableId: number | null, totals: { total_watts?: number | null; total_amperes?: number | null; total_btu?: number | null }) => {
+    // Simple insert, not deduping for this sprint
+    return execute('INSERT INTO load_calc_results (project_id, voltage_table_id, total_watts, total_amperes, total_btu) VALUES (?, ?, ?, ?, ?)', [projectId, voltageTableId ?? null, totals.total_watts ?? null, totals.total_amperes ?? null, totals.total_btu ?? null]);
+  },
+  deleteByProject: (projectId: number) => execute('DELETE FROM load_calc_results WHERE project_id = ?', [projectId]),
+  deleteByVoltageTable: (voltageTableId: number) => execute('DELETE FROM load_calc_results WHERE voltage_table_id = ?', [voltageTableId])
 };
 
 // Settings
