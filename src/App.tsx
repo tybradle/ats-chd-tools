@@ -7,6 +7,7 @@ import { PartsPage } from "@/pages/parts";
 import { BomPage } from "@/pages/bom";
 import { BomProjectPage } from "@/pages/bom-project";
 import GlenairPage from "@/pages/glenair";
+import { LoadCalcPage } from "@/pages/load-calc";
 
 function App() {
   return (
@@ -19,11 +20,13 @@ function App() {
           <Route path="/bom" element={<BomPage />} />
           <Route path="/bom/:projectId" element={<BomProjectPage />} />
           <Route path="/glenair" element={<GlenairPage />} />
+          <Route path="/load-calc" element={<LoadCalcPage />} />
         </Route>
       </Routes>
       <Toaster position="bottom-right" />
     </BrowserRouter>
   );
 }
+
 
 export default App;
