@@ -91,6 +91,8 @@ Plans:
 | Phase | Name | Status |
 |------:|------|--------|
 | 1 | Project/Package Scoping + Entry UX | Complete (8/8 plans complete) |
+| LC | Load Calculator (Parallel) | In Progress (Sprints 0-3a Complete) |
 | 2 | BOM Translation Release Rails | Planned |
 | 3 | Backup / Restore / Merge | Planned |
 | 4 | Settings + UNC Updater | Planned |
+

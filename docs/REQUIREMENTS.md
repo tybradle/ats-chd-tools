@@ -24,7 +24,18 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **BOM-05**: System exports to existing ingestion format (.zw1) deterministically (same input+settings => same output) with no format changes.
 - [ ] **BOM-06**: System records run history / audit trail for each package run (input hash, mapping version, outputs produced, timestamp).
 
-### Data Safety (Backup/Restore/Merge)
+### Load Calculator
+ 
+ - [x] **LOAD-01**: User can import parts from CSV to populate a Master Parts library with electrical specs.
+ - [x] **LOAD-02**: User can search and browse the Master Parts library by manufacturer, part number, and voltage type.
+ - [ ] **LOAD-03**: User can import Eplan BOM data and map columns to internal fields. (UI/State Complete)
+ - [ ] **LOAD-04**: System performs automatic part matching between Eplan data and Master Parts library.
+ - [ ] **LOAD-05**: User can organize loads into Locations and independently lockable Voltage Tables.
+ - [ ] **LOAD-06**: System calculates Heat Dissipation (BTU/hr), Circuit Loading (Amps/phase), and Phase Balance.
+ - [ ] **LOAD-07**: System exports reports to multi-sheet Excel and PDF formats.
+ 
+ ### Data Safety (Backup/Restore/Merge)
+
 
 - [ ] **DATA-01**: User can create a shareable ZIP backup containing DB snapshot + settings + metadata manifest.
 - [ ] **DATA-02**: User can restore from a ZIP backup via wizard; restore is atomic and verified (integrity check).
@@ -93,11 +104,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | APP-01 | 1 | Complete |
 | APP-02 | 4 | Pending |
 | REL-01 | 2 | Pending |
+| LOAD-01 | LC | Complete |
+| LOAD-02 | LC | Complete |
+| LOAD-03 | LC | In Progress |
+| LOAD-04 | LC | Pending |
+| LOAD-05 | LC | Pending |
+| LOAD-06 | LC | Pending |
+| LOAD-07 | LC | Pending |
+ 
+ **Coverage:**
+ - v1 requirements: 28 total
+ - Mapped to phases: 28
+ - Unmapped: 0 ✓
 
-**Coverage:**
-- v1 requirements: 21 total
-- Mapped to phases: 21
-- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-01-20*
