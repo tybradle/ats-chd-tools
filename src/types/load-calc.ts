@@ -72,7 +72,7 @@ export interface MappingTemplate {
   createdAt: string;
 }
 
-export type ImportStep = 'upload' | 'mapping' | 'preview' | 'complete';
+export type ImportStep = 'upload' | 'mapping' | 'matching' | 'preview' | 'complete';
 
 export interface ImportState {
   file: File | null;
@@ -81,6 +81,37 @@ export interface ImportState {
   mappings: Record<string, string>; // targetField -> sourceColumn
   step: ImportStep;
 }
+
+export type ImportMatchState = 'pending' | 'matched' | 'unmatched' | 'manual' | 'skipped';
+
+export interface MatchResult {
+  rowIndex: number;
+  partId: number | null;
+  confidence: number; // 0.0 - 1.0
+  state: ImportMatchState;
+  matchedPartNumber?: string | null;
+  matchedManufacturer?: string | null;
+  manualEntry?: {
+    partNumber: string;
+    description?: string;
+    manufacturer?: string;
+    amperage?: number;
+    wattage?: number;
+    heatDissipation?: number;
+  } | null;
+}
+
+export interface ImportMatchingConfig {
+  matchThreshold: number; // Minimum confidence for auto-match
+  normalizeWhitespace: boolean;
+  normalizeCase: boolean;
+}
+
+export const DEFAULT_MATCHING_CONFIG: ImportMatchingConfig = {
+  matchThreshold: 0.9,
+  normalizeWhitespace: true,
+  normalizeCase: true,
+};
 
 export const LOAD_CALC_IMPORT_FIELDS = [
   { id: 'part_number', label: 'Part Number', required: true },

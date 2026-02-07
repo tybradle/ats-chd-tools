@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLoadCalcPartsStore, type PartElectricalVariant } from '@/stores/load-calc-parts-store';
+import { useLoadCalcProjectStore } from '@/stores/load-calc-project-store';
 import { 
   Table, 
   TableBody, 
@@ -9,7 +10,8 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Zap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Zap, Plus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 interface PartDetailProps {
@@ -18,6 +20,7 @@ interface PartDetailProps {
 
 export function PartDetail({ partId }: PartDetailProps) {
   const { parts, getElectricalVariants } = useLoadCalcPartsStore();
+  const { currentVoltageTable, addLineItem } = useLoadCalcProjectStore();
   const [variants, setVariants] = useState<PartElectricalVariant[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,13 +36,39 @@ export function PartDetail({ partId }: PartDetailProps) {
     load();
   }, [partId, getElectricalVariants]);
 
+  const handleAddToProject = async () => {
+    if (!currentVoltageTable || !part) return;
+    
+    // Find matching variant or first one
+    const variant = variants.find(v => v.voltage_type === currentVoltageTable.voltage_type) || variants[0];
+    
+    await addLineItem({
+      voltage_table_id: currentVoltageTable.id,
+      part_id: part.id,
+      qty: 1,
+      utilization_pct: variant?.utilization_default ?? 1.0,
+      amperage_override: null, // Don't override initially, let it use part spec
+      wattage_override: null,
+      heat_dissipation_override: null,
+      description: part.description,
+      power_group: null,
+      phase_assignment: null
+    });
+  };
+
   if (!part) return null;
 
   return (
     <div className="space-y-6 py-4">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-primary">{part.part_number}</h2>
-        <p className="text-muted-foreground">{part.manufacturer_name}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-primary">{part.part_number}</h2>
+          <p className="text-muted-foreground">{part.manufacturer_name}</p>
+        </div>
+        <Button onClick={handleAddToProject} disabled={!currentVoltageTable} size="sm">
+          <Plus className="mr-2 h-4 w-4" />
+          Add to Project
+        </Button>
       </div>
 
       <Separator />

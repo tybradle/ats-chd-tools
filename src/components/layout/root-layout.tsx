@@ -12,10 +12,13 @@ import {
   Menu,
   ChevronLeft,
   Calculator,
+  Folders,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { GlobalProjectManager } from "@/components/shared/global-project-manager";
+import { useAppStore } from "@/stores/app-store";
 
 const navItems = [
   { to: "/", icon: Home, label: "Home" },
@@ -28,6 +31,7 @@ const navItems = [
 
 export function RootLayout() {
   const [collapsed, setCollapsed] = useState(false);
+  const setProjectManagerOpen = useAppStore((state) => state.setProjectManagerOpen);
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -57,7 +61,21 @@ export function RootLayout() {
           {/* Navigation */}
           <ScrollArea className="flex-1 h-full py-2">
             <nav className="space-y-1 px-2">
+              <button
+                onClick={() => setProjectManagerOpen(true)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors mb-4",
+                  "text-primary hover:bg-primary/10"
+                )}
+              >
+                <Folders className="h-4 w-4" />
+                {!collapsed && "Project Manager"}
+              </button>
+              
+              <Separator className="mb-4" />
+
               {navItems.map((item) => (
+
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -129,6 +147,9 @@ export function RootLayout() {
           </button>
         </div>
       </footer>
+
+      <GlobalProjectManager />
     </div>
   );
 }
+

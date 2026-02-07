@@ -1,18 +1,31 @@
 import { create } from 'zustand';
 import { toast } from 'sonner';
-import { 
-  loadCalcProjects, 
-  bomLocations, 
-  loadCalcVoltageTables, 
-  loadCalcLineItems
+import {
+  loadCalcProjects,
+  bomLocations,
+  bomPackages,
+  bomJobProjects,
+  loadCalcVoltageTables,
+  loadCalcLineItems,
+  loadCalcResults,
 } from '@/lib/db/client';
-import type { 
-  LoadCalcProject, 
-  LoadCalcVoltageTable, 
+import type {
+  LoadCalcProject,
+  LoadCalcVoltageTable,
   LoadCalcLineItem,
   VoltageType
 } from '@/types/load-calc';
 import type { BOMLocation } from '@/types/bom';
+import type { TableCalculationResult } from '@/lib/load-calc/calculations';
+import type { ValidationIssue } from '@/lib/load-calc/validation';
+import { 
+  aggregateHeatWattsByLocation, 
+  aggregateLoadingByVoltageTable, 
+  getThreePhaseBalanceData,
+  type HeatReportRow,
+  type LoadingReportRow,
+  type BalanceReportRow
+} from '@/lib/load-calc/reports';
 
 interface LoadCalcProjectState {
   // Current Selections
@@ -33,6 +46,25 @@ interface LoadCalcProjectState {
     voltageTables: boolean;
     lineItems: boolean;
   };
+
+  // Calculation State
+  calculationResult: TableCalculationResult | null;
+  validationIssues: ValidationIssue[];
+  isCalculating: boolean;
+
+  // BOM Context (resolved display info for linked projects)
+  bomPackageInfo: {
+    jobProjectNumber: string;
+    packageName: string;
+  } | null;
+
+  // Report State
+  reportData: {
+    heat: HeatReportRow[];
+    loading: LoadingReportRow[];
+    balance: BalanceReportRow[];
+  } | null;
+  isGeneratingReports: boolean;
 
   // Actions - Projects
   fetchProjects: () => Promise<void>;
@@ -57,7 +89,23 @@ interface LoadCalcProjectState {
 
   // Actions - Line Items
   fetchLineItems: (voltageTableId: number) => Promise<void>;
+  addLineItem: (item: Omit<LoadCalcLineItem, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateLineItem: (id: number, updates: Partial<LoadCalcLineItem>) => Promise<void>;
   deleteLineItem: (id: number) => Promise<void>;
+
+  // Actions - Calculations
+  validateAndCalculate: () => Promise<boolean>;
+  clearCalculation: () => void;
+
+  // Actions - BOM Integration
+  resolveBomPackageInfo: () => Promise<void>;
+  linkToPackage: (bomPackageId: number) => Promise<void>;
+  unlinkFromPackage: () => Promise<void>;
+  syncLocations: () => Promise<void>;
+
+  // Actions - Reports
+  generateReports: () => Promise<void>;
+  refreshReports: () => Promise<void>;
 }
 
 export const useLoadCalcProjectStore = create<LoadCalcProjectState>((set, get) => ({
@@ -75,6 +123,15 @@ export const useLoadCalcProjectStore = create<LoadCalcProjectState>((set, get) =
     lineItems: false,
   },
 
+  calculationResult: null,
+  validationIssues: [],
+  isCalculating: false,
+
+  bomPackageInfo: null,
+
+  reportData: null,
+  isGeneratingReports: false,
+
   // Projects
   fetchProjects: async () => {
     set(state => ({ loading: { ...state.loading, projects: true } }));
@@ -90,20 +147,23 @@ export const useLoadCalcProjectStore = create<LoadCalcProjectState>((set, get) =
   },
 
   selectProject: async (project) => {
-    set({ 
-      currentProject: project, 
-      currentLocation: null, 
+    set({
+      currentProject: project,
+      currentLocation: null,
       currentVoltageTable: null,
       locations: [],
       voltageTables: [],
-      lineItems: []
+      lineItems: [],
+      bomPackageInfo: null,
+      reportData: null,
     });
-    
+
     if (project) {
       if (project.bom_package_id) {
         await get().fetchLocations(project.bom_package_id);
       }
       await get().fetchVoltageTables(project.id);
+      await get().resolveBomPackageInfo();
     }
   },
 
@@ -240,7 +300,7 @@ export const useLoadCalcProjectStore = create<LoadCalcProjectState>((set, get) =
   },
 
   selectVoltageTable: async (table) => {
-    set({ currentVoltageTable: table, lineItems: [] });
+    set({ currentVoltageTable: table, lineItems: [], calculationResult: null, validationIssues: [] });
     if (table) {
       await get().fetchLineItems(table.id);
     }
@@ -310,6 +370,33 @@ export const useLoadCalcProjectStore = create<LoadCalcProjectState>((set, get) =
     }
   },
 
+  addLineItem: async (item) => {
+    try {
+      await loadCalcLineItems.create(item);
+      const table = get().currentVoltageTable;
+      if (table) {
+        await get().fetchLineItems(table.id);
+      }
+      toast.success('Added to project');
+    } catch (error) {
+      console.error('Failed to add line item:', error);
+      toast.error('Failed to add item');
+    }
+  },
+
+  updateLineItem: async (id, updates) => {
+    try {
+      await loadCalcLineItems.update(id, updates);
+      const table = get().currentVoltageTable;
+      if (table) {
+        await get().fetchLineItems(table.id);
+      }
+    } catch (error) {
+      console.error('Failed to update line item:', error);
+      toast.error('Failed to update item');
+    }
+  },
+
   deleteLineItem: async (id) => {
     try {
       await loadCalcLineItems.delete(id);
@@ -322,5 +409,148 @@ export const useLoadCalcProjectStore = create<LoadCalcProjectState>((set, get) =
       console.error('Failed to delete line item:', error);
       toast.error('Failed to delete item');
     }
+  },
+
+  // Calculations
+  validateAndCalculate: async () => {
+    const { currentVoltageTable, currentProject, lineItems } = get();
+    if (!currentVoltageTable || !currentProject || lineItems.length === 0) {
+      toast.error('No line items to calculate');
+      return false;
+    }
+
+    set({ isCalculating: true, validationIssues: [], calculationResult: null });
+
+    try {
+      // Run validation
+      const { validateLineItems, hasErrors } = await import('@/lib/load-calc/validation');
+      const issues = validateLineItems(lineItems, currentVoltageTable.voltage_type);
+      set({ validationIssues: issues });
+
+      if (hasErrors(issues)) {
+        set({ isCalculating: false });
+        toast.error(`Validation failed: ${issues.filter(i => i.severity === 'error').length} error(s)`);
+        return false;
+      }
+
+      // Run calculations
+      const { calculateTableResults } = await import('@/lib/load-calc/calculations');
+      const result = await calculateTableResults(lineItems, currentVoltageTable.voltage_type);
+      set({ calculationResult: result, isCalculating: false });
+
+      // Cache results to DB
+      await loadCalcResults.upsertForVoltageTable(currentProject.id, currentVoltageTable.id, {
+        total_watts: result.totalWatts,
+        total_amperes: result.totalAmperes,
+        total_btu: result.totalBtu,
+      });
+
+      toast.success('Calculations complete');
+      return true;
+    } catch (error) {
+      console.error('Calculation failed:', error);
+      toast.error('Calculation failed');
+      set({ isCalculating: false });
+      return false;
+    }
+  },
+
+  clearCalculation: () => {
+    set({ calculationResult: null, validationIssues: [] });
+  },
+
+  // BOM Integration
+  resolveBomPackageInfo: async () => {
+    const project = get().currentProject;
+    if (!project?.bom_package_id) {
+      set({ bomPackageInfo: null });
+      return;
+    }
+    try {
+      const pkg = await bomPackages.getById(project.bom_package_id);
+      if (pkg) {
+        const job = await bomJobProjects.getById(pkg.project_id);
+        set({
+          bomPackageInfo: {
+            jobProjectNumber: job?.project_number ?? 'Unknown',
+            packageName: pkg.package_name,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Failed to resolve BOM package info:', error);
+    }
+  },
+
+  linkToPackage: async (bomPackageId) => {
+    const project = get().currentProject;
+    if (!project) return;
+    try {
+      await loadCalcProjects.update(project.id, { bom_package_id: bomPackageId });
+      const updated = await loadCalcProjects.getById(project.id);
+      if (updated) {
+        set({ currentProject: updated });
+        await get().fetchLocations(bomPackageId);
+        await get().resolveBomPackageInfo();
+        await get().fetchProjects();
+        toast.success('Linked to BOM package');
+      }
+    } catch (error) {
+      console.error('Failed to link to BOM package:', error);
+      toast.error('Failed to link to BOM package');
+    }
+  },
+
+  unlinkFromPackage: async () => {
+    const project = get().currentProject;
+    if (!project) return;
+    try {
+      await loadCalcProjects.update(project.id, { bom_package_id: null });
+      const updated = await loadCalcProjects.getById(project.id);
+      if (updated) {
+        set({ currentProject: updated, locations: [], currentLocation: null, bomPackageInfo: null });
+        await get().fetchProjects();
+        toast.success('Unlinked from BOM package');
+      }
+    } catch (error) {
+      console.error('Failed to unlink from BOM package:', error);
+      toast.error('Failed to unlink from BOM package');
+    }
+  },
+
+  syncLocations: async () => {
+    const project = get().currentProject;
+    if (!project?.bom_package_id) {
+      toast.error('Project must be linked to a BOM package');
+      return;
+    }
+    await get().fetchLocations(project.bom_package_id);
+    toast.success('Locations synced from BOM');
+  },
+
+  // Reports
+  generateReports: async () => {
+    const project = get().currentProject;
+    if (!project) return;
+
+    set({ isGeneratingReports: true });
+    try {
+      const [heat, loading, balance] = await Promise.all([
+        aggregateHeatWattsByLocation(project.id),
+        aggregateLoadingByVoltageTable(project.id),
+        getThreePhaseBalanceData(project.id)
+      ]);
+      set({ reportData: { heat, loading, balance } });
+    } catch (error) {
+      console.error('Failed to generate reports:', error);
+      toast.error('Failed to generate reports');
+    } finally {
+      set({ isGeneratingReports: false });
+    }
+  },
+
+  refreshReports: async () => {
+    await get().generateReports();
+    toast.success('Reports refreshed');
   },
 }));

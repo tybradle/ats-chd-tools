@@ -1,13 +1,13 @@
-import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectView } from "@/components/load-calc/project-view";
 import { PartsBrowser } from "@/components/load-calc/parts-browser";
 import { PartsImport } from "@/components/load-calc/parts-import";
-import { Database, FolderKanban, Calculator } from "lucide-react";
-import { EplanImportWizard } from "@/components/load-calc/eplan-import/eplan-import-wizard";
+import { ReportsView } from "@/components/load-calc/reports-view";
+import { useLoadCalcProjectStore } from "@/stores/load-calc-project-store";
+import { Database, FolderKanban, Calculator, BarChart3 } from "lucide-react";
 
 export function LoadCalcPage() {
-  const [isImportOpen, setIsImportOpen] = useState(false);
+  const { currentProject } = useLoadCalcProjectStore();
 
   return (
     <div className="space-y-6">
@@ -28,6 +28,10 @@ export function LoadCalcPage() {
             <FolderKanban className="h-4 w-4" />
             Project View
           </TabsTrigger>
+          <TabsTrigger value="reports" className="flex items-center gap-2" disabled={!currentProject}>
+            <BarChart3 className="h-4 w-4" />
+            Reports
+          </TabsTrigger>
           <TabsTrigger value="import" className="flex items-center gap-2">
             <Calculator className="h-4 w-4" />
             Import Master List
@@ -42,6 +46,10 @@ export function LoadCalcPage() {
           <ProjectView />
         </TabsContent>
 
+        <TabsContent value="reports">
+          <ReportsView />
+        </TabsContent>
+
         <TabsContent value="import">
           <div className="max-w-2xl">
             <PartsImport />
@@ -49,7 +57,6 @@ export function LoadCalcPage() {
         </TabsContent>
       </Tabs>
 
-      <EplanImportWizard open={isImportOpen} onOpenChange={setIsImportOpen} />
     </div>
   );
 }

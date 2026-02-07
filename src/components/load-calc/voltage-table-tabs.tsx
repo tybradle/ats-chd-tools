@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react';
 import { useLoadCalcProjectStore } from '@/stores/load-calc-project-store';
 import { Button } from '@/components/ui/button';
-import { 
-  Plus, 
-  Lock, 
-  LockOpen, 
+import {
+  Plus,
+  Lock,
+  LockOpen,
   Trash2,
   Table as TableIcon,
-  AlertCircle
+  AlertCircle,
+  FileUp
 } from 'lucide-react';
 import {
   Tabs,
@@ -32,6 +33,9 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { LineItemTable } from './line-item-table';
+import { AddLineItemDialog } from './add-line-item-dialog';
+import { EplanImportWizard } from './eplan-import/eplan-import-wizard';
+import { CalculateButton, CalculationSummary } from './calculation-panel';
 import type { VoltageType } from '@/types/load-calc';
 
 const VOLTAGE_TYPES: { value: VoltageType; label: string }[] = [
@@ -56,6 +60,8 @@ export function VoltageTableTabs() {
   } = useLoadCalcProjectStore();
 
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isAddItemOpen, setIsAddItemOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [newVoltage, setNewVoltage] = useState<string>('480VAC_3PH');
 
   const filteredTables = useMemo(() => {
@@ -157,9 +163,32 @@ export function VoltageTableTabs() {
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <CalculateButton />
+                      {!table.is_locked && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1.5"
+                            onClick={() => setIsImportOpen(true)}
+                          >
+                            <FileUp className="h-3.5 w-3.5" />
+                            Import
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1.5"
+                            onClick={() => setIsAddItemOpen(true)}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Add Item
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-8 gap-1.5"
                         onClick={() => toggleTableLock(table.id, !table.is_locked)}
                       >
@@ -186,6 +215,7 @@ export function VoltageTableTabs() {
                     </div>
                   </div>
                   
+                  <CalculationSummary />
                   <div className="flex-1 overflow-auto">
                     <LineItemTable />
                   </div>
@@ -207,7 +237,13 @@ export function VoltageTableTabs() {
         )}
       </div>
 
-      {/* Add Dialog */}
+      {/* Add Line Item Dialog */}
+      <AddLineItemDialog open={isAddItemOpen} onOpenChange={setIsAddItemOpen} />
+
+      {/* EPLAN Import Wizard */}
+      <EplanImportWizard open={isImportOpen} onOpenChange={setIsImportOpen} />
+
+      {/* Add Voltage Table Dialog */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent>
           <DialogHeader>

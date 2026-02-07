@@ -12,6 +12,8 @@ export interface PartElectricalVariant {
   amperage: number | null;
   wattage: number | null;
   heat_dissipation_btu: number | null;
+  max_temp_c: number | null;
+  utilization_default: number | null;
   voltage_type: VoltageType | string;
 }
 
