@@ -355,7 +355,10 @@ export const loadCalcLineItems = {
 export const loadCalcResults = {
   getByProject: (projectId: number) => query<LoadCalcResult>('SELECT * FROM load_calc_results WHERE project_id = ? ORDER BY calculated_at DESC', [projectId]),
   upsertForVoltageTable: async (projectId: number, voltageTableId: number | null, totals: { total_watts?: number | null; total_amperes?: number | null; total_btu?: number | null }) => {
-    // Simple insert, not deduping for this sprint
+    // Delete existing result for this voltage table, then insert fresh
+    if (voltageTableId != null) {
+      await execute('DELETE FROM load_calc_results WHERE voltage_table_id = ?', [voltageTableId]);
+    }
     return execute('INSERT INTO load_calc_results (project_id, voltage_table_id, total_watts, total_amperes, total_btu) VALUES (?, ?, ?, ?, ?)', [projectId, voltageTableId ?? null, totals.total_watts ?? null, totals.total_amperes ?? null, totals.total_btu ?? null]);
   },
   deleteByProject: (projectId: number) => execute('DELETE FROM load_calc_results WHERE project_id = ?', [projectId]),
